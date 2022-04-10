@@ -20,14 +20,14 @@ func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packa
 
 // searchDependencyName search the created dependency as the first variable returned.
 func searchDependencyName(funcdecl *ast.FuncDecl) string {
-	switch t := funcdecl.Type.Results.List[0].Type.(type) { // get the type of the dependency
-	case *ast.StarExpr: // dependency returned as a pointer
+	switch t := funcdecl.Type.Results.List[0].Type.(type) { // get the type of the dependency.
+	case *ast.StarExpr: // dependency returned as a pointer.
 		ident, ok := t.X.(*ast.Ident)
 		if !ok {
 			return ""
 		}
 		return ident.Name
-	case *ast.Ident: // dependency returned as a value
+	case *ast.Ident: // dependency returned as a value.
 		return t.Name
 	}
 	return ""
@@ -49,15 +49,15 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string) (deps map[string][]
 			varName = name.String()
 		}
 		deps[varName] = append(deps[varName], Dep{
-			VarName:     varName,
-			PackageName: packageName,
-			ServiceName: serviceName,
+			VarName:        varName,
+			PackageName:    packageName,
+			DependencyName: serviceName,
 		})
 	}
 	return deps
 }
 
-func getDepID(dep ast.Expr) (packageName string, serviceName string) {
+func getDepID(dep ast.Expr) (packageName, serviceName string) {
 	if depStar, ok := dep.(*ast.StarExpr); ok {
 		dep = depStar.X
 	}
@@ -77,7 +77,7 @@ func getDepID(dep ast.Expr) (packageName string, serviceName string) {
 }
 
 // searchDependenciesAssignment parse the provider function to search for a return.
-// this return is then parsed to look for injected functions to complete the deps found in the previous step
+// this return is then parsed to look for injected functions to complete the deps found in the previous step.
 func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep, s structDecl) {
 	if funcdecl.Body != nil {
 		for _, stmt := range funcdecl.Body.List {

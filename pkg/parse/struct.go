@@ -45,8 +45,7 @@ func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
 
 func getMethods(f *ast.Field) []string {
 	var m []string
-	switch t := f.Type.(type) {
-	case *ast.InterfaceType:
+	if t, ok := f.Type.(*ast.InterfaceType); ok {
 		for _, methods := range t.Methods.List {
 			m = append(m, methods.Names[0].Name)
 		}

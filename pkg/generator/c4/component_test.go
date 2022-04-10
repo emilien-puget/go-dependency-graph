@@ -22,18 +22,18 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 					Deps: map[string][]parse.Dep{
 						"b": {
 							{
-								PackageName: "fn",
-								ServiceName: "B",
-								VarName:     "b",
-								Funcs:       []string{"FuncA", "FuncB"},
+								PackageName:    "fn",
+								DependencyName: "B",
+								VarName:        "b",
+								Funcs:          []string{"FuncA", "FuncB"},
 							},
 						},
 						"d": {
 							{
-								PackageName: "fn",
-								ServiceName: "D",
-								VarName:     "d",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "fn",
+								DependencyName: "D",
+								VarName:        "d",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -43,10 +43,10 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 					Deps: map[string][]parse.Dep{
 						"c": {
 							{
-								PackageName: "fn",
-								ServiceName: "C",
-								VarName:     "c",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "fn",
+								DependencyName: "C",
+								VarName:        "c",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -60,10 +60,10 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 					Deps: map[string][]parse.Dep{
 						"a": {
 							{
-								PackageName: "pa",
-								ServiceName: "A",
-								VarName:     "a",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "pa",
+								DependencyName: "A",
+								VarName:        "a",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -77,6 +77,7 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 			},
 		},
 	})
+	buff.Flush()
 	assert.NoError(t, err)
 
 	// TODO : properly test the output

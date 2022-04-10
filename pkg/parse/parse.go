@@ -8,25 +8,30 @@ import (
 	"path/filepath"
 )
 
+// AstSchema is a simpler presentation of the ast of a project.
 type AstSchema struct {
 	ModulePath string
 	Packages   map[string]Dependencies
 }
 
+// Dependencies contains all the dependencies of a package.
 type Dependencies map[string]Dependency
 
+// Dependency represent a type that has been identified as a dependency.
 type Dependency struct {
 	Comment string
 	Deps    map[string][]Dep
 }
 
+// Dep represent one dependency injected.
 type Dep struct {
-	PackageName string
-	ServiceName string
-	VarName     string
-	Funcs       []string
+	PackageName    string
+	DependencyName string
+	VarName        string
+	Funcs          []string
 }
 
+// Parse parses the project located under pathDir and returns an AstSchema.
 func Parse(pathDir string) (AstSchema, error) {
 	modulePath, err := getModulePath(pathDir)
 	if err != nil {
@@ -98,19 +103,21 @@ func parseFile(f *ast.File) (dependencies Dependencies) {
 	}
 
 	for _, decl := range f.Decls {
-		if d, ok := decl.(*ast.FuncDecl); ok {
-			var deps map[string][]Dep
-			name, deps := searchProvider(d, structs, packageName)
-			if name == "" {
-				continue
-			}
-			ser := Dependency{}
-			ser.Deps = deps
-			if len(structs[packageName+"."+name].doc) > 3 {
-				ser.Comment = structs[packageName+"."+name].doc[3:]
-			}
-			dependencies[name] = ser
+		d, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
 		}
+		var deps map[string][]Dep
+		name, deps := searchProvider(d, structs, packageName)
+		if name == "" {
+			continue
+		}
+		ser := Dependency{}
+		ser.Deps = deps
+		if len(structs[packageName+"."+name].doc) > 3 {
+			ser.Comment = structs[packageName+"."+name].doc[3:]
+		}
+		dependencies[name] = ser
 	}
 
 	return dependencies

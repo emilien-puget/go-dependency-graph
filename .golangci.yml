@@ -15,7 +15,7 @@ linters:
     - "gofmt"
     - "gofumpt"
     - "goimports"
-    - "golint"
+    - "revive"
     - "govet"
     - "ineffassign"
     - "megacheck"

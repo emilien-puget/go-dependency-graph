@@ -20,18 +20,18 @@ func TestParse_fn(t *testing.T) {
 					Deps: map[string][]Dep{
 						"b": {
 							{
-								PackageName: "fn",
-								ServiceName: "B",
-								VarName:     "b",
-								Funcs:       []string{"FuncA", "FuncB"},
+								PackageName:    "fn",
+								DependencyName: "B",
+								VarName:        "b",
+								Funcs:          []string{"FuncA", "FuncB"},
 							},
 						},
 						"d": {
 							{
-								PackageName: "fn",
-								ServiceName: "D",
-								VarName:     "d",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "fn",
+								DependencyName: "D",
+								VarName:        "d",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -41,10 +41,10 @@ func TestParse_fn(t *testing.T) {
 					Deps: map[string][]Dep{
 						"c": {
 							{
-								PackageName: "fn",
-								ServiceName: "C",
-								VarName:     "c",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "fn",
+								DependencyName: "C",
+								VarName:        "c",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -58,10 +58,10 @@ func TestParse_fn(t *testing.T) {
 					Deps: map[string][]Dep{
 						"a": {
 							{
-								PackageName: "pa",
-								ServiceName: "A",
-								VarName:     "a",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "pa",
+								DependencyName: "A",
+								VarName:        "a",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -91,18 +91,18 @@ func TestParse_inter(t *testing.T) {
 					Deps: map[string][]Dep{
 						"b": {
 							{
-								PackageName: "inter",
-								ServiceName: "B",
-								VarName:     "b",
-								Funcs:       []string{"FuncA", "FuncB"},
+								PackageName:    "inter",
+								DependencyName: "B",
+								VarName:        "b",
+								Funcs:          []string{"FuncA", "FuncB"},
 							},
 						},
 						"d": {
 							{
-								PackageName: "inter",
-								ServiceName: "D",
-								VarName:     "d",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "inter",
+								DependencyName: "D",
+								VarName:        "d",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -112,10 +112,10 @@ func TestParse_inter(t *testing.T) {
 					Deps: map[string][]Dep{
 						"c": {
 							{
-								PackageName: "inter",
-								ServiceName: "C",
-								VarName:     "c",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "inter",
+								DependencyName: "C",
+								VarName:        "c",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -129,10 +129,10 @@ func TestParse_inter(t *testing.T) {
 					Deps: map[string][]Dep{
 						"a": {
 							{
-								PackageName: "pa",
-								ServiceName: "A",
-								VarName:     "a",
-								Funcs:       []string{"FuncA"},
+								PackageName:    "pa",
+								DependencyName: "A",
+								VarName:        "a",
+								Funcs:          []string{"FuncA"},
 							},
 						},
 					},
@@ -162,10 +162,10 @@ func TestParse_wire_sample(t *testing.T) {
 					Deps: map[string][]Dep{
 						"g": {
 							{
-								PackageName: "main",
-								ServiceName: "Greeter",
-								VarName:     "g",
-								Funcs:       nil,
+								PackageName:    "main",
+								DependencyName: "Greeter",
+								VarName:        "g",
+								Funcs:          nil,
 							},
 						},
 					},
@@ -175,10 +175,10 @@ func TestParse_wire_sample(t *testing.T) {
 					Deps: map[string][]Dep{
 						"m": {
 							{
-								PackageName: "main",
-								ServiceName: "Message",
-								VarName:     "m",
-								Funcs:       nil,
+								PackageName:    "main",
+								DependencyName: "Message",
+								VarName:        "m",
+								Funcs:          nil,
 							},
 						},
 					},
