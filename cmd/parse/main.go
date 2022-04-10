@@ -18,48 +18,57 @@ func main() {
 	generator := flag.String("generator", "c4_plantuml_component", "the name of the generator to use, [c4_plantuml_component, json], default c4_plantuml_component")
 	flag.Parse()
 
-	if project == nil || *project == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "project is required")
+	err := run(project, path, generator)
+	if err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+}
+
+var (
+	errMissingResult  = errors.New("result is required")
+	errMissingProject = errors.New("project is required")
+)
+
+func run(project, path, generator *string) error {
+	if project == nil || *project == "" {
+		return errMissingProject
 	}
 
 	writer, err := getWriter(path)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 	defer writer.Flush()
 
 	as, err := parse.Parse(*project)
 	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 
 	switch *generator {
 	case "c4_plantuml_component":
 		err = c4.GenerateC4ComponentUmlFromSchema(writer, as)
 		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return err
 		}
 	case "json":
 		err := json.GenerateJSONFromSchema(writer, as)
 		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			return err
 		}
 	default:
 		_, _ = fmt.Fprintln(os.Stderr, "unknown generator")
-		os.Exit(1)
+		return nil
 	}
+	return nil
 }
 
 func getWriter(path *string) (*bufio.Writer, error) {
 	o, _ := os.Stdout.Stat()
 	if (o.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
 		if path == nil || *path == "" {
-			return nil, errors.New("result is required")
+			return nil, errMissingResult
 		}
 		file, err := os.Create(*path)
 		if err != nil {

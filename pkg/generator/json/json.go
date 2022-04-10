@@ -7,6 +7,7 @@ import (
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
+// GenerateJSONFromSchema encode the AstSchema into a JSON.
 func GenerateJSONFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	encoder := json.NewEncoder(writer)
 	err := encoder.Encode(s)
