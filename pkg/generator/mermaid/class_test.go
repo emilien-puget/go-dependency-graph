@@ -1,4 +1,4 @@
-package c4
+package mermaid
 
 import (
 	"bufio"
@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
-
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateUmlFileFromSchema(t *testing.T) {
+func TestGenerateMermaidClassFromSchema(t *testing.T) {
 	file := &bytes.Buffer{}
 	buff := bufio.NewWriter(file)
-	err := GenerateComponentFromSchema(buff, parse.AstSchema{
+	err := GenerateClassFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Packages: map[string]parse.Dependencies{
 			"fn": {
@@ -81,5 +80,5 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 	assert.NoError(t, err)
 
 	// TODO : properly test the output
-	// assert.Equal(t, "@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml\n\ntitle testdata/fn\n\nContainer_Boundary(fn, \"fn\") {\nComponent(fn.A, \"fn.A\", \"\", \"\")\nComponent(fn.B, \"fn.B\", \"\", \"\")\nComponent(fn.C, \"fn.C\", \"\", \"\")\nComponent(fn.D, \"fn.D\", \"\", \"\")\n\n}\n\n\nContainer_Boundary(pa, \"pa\") {\nComponent(pa.A, \"pa.A\", \"\", \"A pa struct.\")\n\n}\nRel(fn.A, fn.B, FuncA)\nRel(fn.A, fn.B, FuncB)\nRel(fn.A, fn.D, FuncA)\nRel(fn.B, fn.C, FuncA)\nRel(fn.D, pa.A, FuncA)\n\n@enduml", file.String())
+	assert.Equal(t, "classDiagram\nfn_A <.. fn_B: FuncA\nfn_A <.. fn_B: FuncB\nfn_A <.. fn_D: FuncA\nfn_B <.. fn_C: FuncA\nfn_D <.. pa_A: FuncA\n", file.String())
 }

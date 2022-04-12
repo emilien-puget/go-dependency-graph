@@ -39,6 +39,7 @@ Available generator are as follows
 
 - `c4_plantuml_component`, the default value, more information about that format here : https://github.com/plantuml-stdlib/C4-PlantUML 
 - `json`, the struct `parse.AstSchema` encoded in JSON
+- `mermaid_class`, a class diagram using mermaid syntax https://mermaid-js.github.io/mermaid/#/classDiagram?id=class-diagrams
 
 ### With the result written to a file
 

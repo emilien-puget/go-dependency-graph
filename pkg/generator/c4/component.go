@@ -7,8 +7,8 @@ import (
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
-// GenerateC4ComponentUmlFromSchema generates a C4 plantuml component.
-func GenerateC4ComponentUmlFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
+// GenerateComponentFromSchema generates a C4 plantuml component.
+func GenerateComponentFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	_, err := writer.WriteString("@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml\n")
 	if err != nil {
 		return err
