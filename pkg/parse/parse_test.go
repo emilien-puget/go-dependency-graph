@@ -6,6 +6,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestParse_ext_dep(t *testing.T) {
+	t.Parallel()
+	parse, err := Parse("testdata/ext_dep")
+	assert.NoError(t, err)
+
+	assert.Equal(t, AstSchema{
+		ModulePath: "testdata/ext_dep",
+		Packages: map[string]Dependencies{
+			"ext_dep": {
+				"A": {
+					Comment: "",
+					Deps: map[string][]Dep{
+						"b": {
+							{
+								PackageName:    "net/http",
+								DependencyName: "Client",
+								VarName:        "b",
+								External:       true,
+							},
+						},
+						"c": {
+							{
+								PackageName:    "ext_dep",
+								DependencyName: "string",
+								VarName:        "c",
+								Funcs:          nil,
+								External:       false, // TODO improve discovery of types
+							},
+						},
+					},
+				},
+			},
+		},
+	}, parse)
+}
+
 func TestParse_fn(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/fn")
