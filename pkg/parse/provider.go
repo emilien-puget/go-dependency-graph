@@ -1,8 +1,10 @@
 package parse
 
-import "go/ast"
+import (
+	"go/ast"
+)
 
-func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packageName string) (name string, deps map[string][]Dep) {
+func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packageName string, imports map[string]Import) (name string, deps map[string][]Dep) {
 	if funcdecl.Name.Name[:3] != "New" {
 		return name, deps
 	}
@@ -12,7 +14,7 @@ func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packa
 		return "", nil
 	}
 
-	deps = searchDependencies(funcdecl, packageName)
+	deps = searchDependencies(funcdecl, packageName, imports)
 
 	searchDependenciesAssignment(funcdecl, deps, s)
 	return name, deps
@@ -34,10 +36,12 @@ func searchDependencyName(funcdecl *ast.FuncDecl) string {
 }
 
 // searchDependencies returns the dependency found in the provider type declaration.
-func searchDependencies(funcdecl *ast.FuncDecl, name string) (deps map[string][]Dep) {
+func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]Import) (deps map[string][]Dep) {
 	deps = map[string][]Dep{}
 	for _, param := range funcdecl.Type.Params.List {
 		packageName, serviceName := getDepID(param.Type)
+		imp := imports[packageName]
+		external := imp.External
 		if packageName == "" {
 			packageName = name
 		}
@@ -48,10 +52,14 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string) (deps map[string][]
 		for _, name := range param.Names {
 			varName = name.String()
 		}
+		if external {
+			packageName = imp.Path
+		}
 		deps[varName] = append(deps[varName], Dep{
 			VarName:        varName,
 			PackageName:    packageName,
 			DependencyName: serviceName,
+			External:       external,
 		})
 	}
 	return deps

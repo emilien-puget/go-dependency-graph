@@ -13,7 +13,7 @@ import (
 func TestGenerateUmlFileFromSchema(t *testing.T) {
 	file := &bytes.Buffer{}
 	buff := bufio.NewWriter(file)
-	err := GenerateC4ComponentUmlFromSchema(buff, parse.AstSchema{
+	err := GenerateComponentFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Packages: map[string]parse.Dependencies{
 			"fn": {

@@ -2,6 +2,11 @@
 
 A tool to build dependency graph for go programs based on dependency injection functions.
 
+# Known issues
+
+- External dependencies are ignored
+- primitive types are not handled and will result in a weird result
+
 # Example
 
 https://github.com/google/wire/blob/main/_tutorial/main.go

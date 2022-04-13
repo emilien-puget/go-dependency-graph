@@ -26,56 +26,64 @@ func main() {
 }
 
 var (
-	errMissingResult  = errors.New("result is required")
-	errMissingProject = errors.New("project is required")
+	errMissingResult    = errors.New("result is required")
+	errMissingProject   = errors.New("project is required")
+	errUnknownGenerator = errors.New("unknown generator")
 )
+
+type generateFromSchema func(writer *bufio.Writer, s parse.AstSchema) error
+
+var generators = map[string]generateFromSchema{
+	"c4_plantuml_component": c4.GenerateComponentFromSchema,
+	"json":                  json.GenerateFromSchema,
+}
 
 func run(project, path, generator *string) error {
 	if project == nil || *project == "" {
 		return errMissingProject
 	}
 
-	writer, err := getWriter(path)
+	gen, ok := generators[*generator]
+	if !ok {
+		return errUnknownGenerator
+	}
+
+	writer, closer, err := getWriter(path)
 	if err != nil {
 		return err
 	}
-	defer writer.Flush()
+	defer closer()
 
 	as, err := parse.Parse(*project)
 	if err != nil {
 		return err
 	}
 
-	switch *generator {
-	case "c4_plantuml_component":
-		err = c4.GenerateC4ComponentUmlFromSchema(writer, as)
-		if err != nil {
-			return err
-		}
-	case "json":
-		err := json.GenerateJSONFromSchema(writer, as)
-		if err != nil {
-			return err
-		}
-	default:
-		_, _ = fmt.Fprintln(os.Stderr, "unknown generator")
-		return nil
+	err = gen(writer, as)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func getWriter(path *string) (*bufio.Writer, error) {
+func getWriter(path *string) (*bufio.Writer, func(), error) {
 	o, _ := os.Stdout.Stat()
 	if (o.Mode() & os.ModeCharDevice) == os.ModeCharDevice {
 		if path == nil || *path == "" {
-			return nil, errMissingResult
+			return nil, nil, errMissingResult
 		}
 		file, err := os.Create(*path)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		defer file.Close()
-		return bufio.NewWriter(file), nil
+		writer := bufio.NewWriter(file)
+		return writer, func() {
+			_ = writer.Flush()
+			_ = file.Close()
+		}, nil
 	}
-	return bufio.NewWriter(os.Stdout), nil
+	writer := bufio.NewWriter(os.Stdout)
+	return writer, func() {
+		_ = writer.Flush()
+	}, nil
 }
