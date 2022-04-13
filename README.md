@@ -2,16 +2,57 @@
 
 A tool to build dependency graph for go programs based on dependency injection functions.
 
-# Known issues
-
-- External dependencies are ignored
-- primitive types are not handled and will result in a weird result
-
 # Example
 
-https://github.com/google/wire/blob/main/_tutorial/main.go
+## [Simple example with interfaces](./pkg/parse/testdata/inter) 
 
-## c4 plantuml component
+### c4 plantuml component
+
+```puml
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title testdata/inter
+AddElementTag("external", $bgColor="#8CDE42FF")
+
+Container_Boundary(inter, "inter") {
+Component(inter.A, "inter.A", "", "")
+Component(inter.B, "inter.B", "", "")
+Component(inter.C, "inter.C", "", "")
+Component(inter.D, "inter.D", "", "")
+
+}
+
+
+Container_Boundary(pa, "pa") {
+Component(pa.A, "pa.A", "", "A pa struct.")
+
+}
+Rel(inter.A, "inter.B", "FuncA")
+Rel(inter.A, "inter.B", "FuncB")
+Rel(inter.A, "inter.D", "FuncA")
+Rel(inter.B, "inter.C", "FuncA")
+Rel(inter.D, "pa.A", "FuncA")
+
+@enduml
+```
+
+http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2CwDYobxzvHaYvTUX3znfdlrplZHvidb3DHI4zAHLWxRMZEvvmmZeidzDIDYrF1WgVix27HPCrPzO-7jrBwEBqg1uamScde5nSMNsO2zmf1XYnAGXu20hMQY4C25omAqRCTZCSuF2_PJn0lzuxvGJPbQrhv9NvrzQOxHaGEsZfsR9ZBsb2Q96dcq4j0ESuGDKvovJz9NHgCrr9dVb3gclOsuEMJZxk-mYwlKDGWDR0-5i_LYh7gnBTuHtlps4edJ0aq_gNsshqb_pEvKIj-0000
+
+### mermaid class
+
+```mermaid
+classDiagram
+inter_A ..> inter_B: FuncA
+inter_A ..> inter_B: FuncB
+inter_A ..> inter_D: FuncA
+inter_B ..> inter_C: FuncA
+inter_D ..> pa_A: FuncA
+```
+
+## [Wire tutorial](https://github.com/google/wire/blob/main/_tutorial/main.go)
+
+### c4 plantuml component
 
 ```puml
 @startuml
@@ -32,7 +73,7 @@ Rel(main.Event, main.Greeter, main.Greeter)
 
 http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2CwDYobxzvHaYvTUX3znfdlrplZHvidb3DHI4zAHLWxRMZEvvmmZeidzDIDYrF1WgVix27HPCrPzO-7jrBwEBqg1uamScde5nSMNsO2zmf1XYnAGXu20hMQY4C25omAqRCTZCSuF2_PJn0lzuxvGJPbQrhv9NvrzQOxHaGEsZfsR9ZBsb2Q96dcq4j0ESuGDKvovJz9NHgCrr9dVb3gclOsuEMJZxk-mYwlKDGWDR0-5i_LYh7gnBTuHtlps4edJ0aq_gNsshqb_pEvKIj-0000
 
-## mermaid class
+### mermaid class
 
 ```mermaid
 classDiagram

@@ -40,13 +40,16 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 	deps = map[string][]Dep{}
 	for _, param := range funcdecl.Type.Params.List {
 		packageName, serviceName := getDepID(param.Type)
+		if serviceName == "" {
+			continue
+		}
+		if isBuiltin(serviceName) { // skip if the dependency is a builtin type
+			continue
+		}
 		imp := imports[packageName]
 		external := imp.External
 		if packageName == "" {
 			packageName = name
-		}
-		if serviceName == "" {
-			continue
 		}
 		varName := ""
 		for _, name := range param.Names {
@@ -63,6 +66,20 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 		})
 	}
 	return deps
+}
+
+func isBuiltin(name string) bool {
+	switch name {
+	case "unsafe.Pointer", "bool", "byte",
+		"complex64", "complex128",
+		"error",
+		"float32", "float64",
+		"int", "int8", "int16", "int32", "int64",
+		"rune", "string",
+		"uint", "uint8", "uint16", "uint32", "uint64", "uintptr":
+		return true
+	}
+	return false
 }
 
 func getDepID(dep ast.Expr) (packageName, serviceName string) {
