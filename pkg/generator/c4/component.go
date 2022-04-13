@@ -46,6 +46,9 @@ func handlePackages(writer *bufio.Writer, packageName string, services parse.Dep
 
 		for _, deps := range service.Deps {
 			for _, d := range deps {
+				if d.External {
+					continue
+				}
 				if len(d.Funcs) != 0 {
 					for _, fn := range d.Funcs {
 						relations += fmt.Sprintf("Rel(%s, %s, %s)\n", fqdn, d.PackageName+"."+d.DependencyName, fn)

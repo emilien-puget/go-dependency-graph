@@ -9,7 +9,6 @@ import (
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/generator/c4"
 	"github.com/emilien-puget/go-dependency-graph/pkg/generator/json"
-	"github.com/emilien-puget/go-dependency-graph/pkg/generator/mermaid"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
@@ -37,7 +36,6 @@ type generateFromSchema func(writer *bufio.Writer, s parse.AstSchema) error
 var generators = map[string]generateFromSchema{
 	"c4_plantuml_component": c4.GenerateComponentFromSchema,
 	"json":                  json.GenerateFromSchema,
-	"mermaid_class":         mermaid.GenerateClassFromSchema,
 }
 
 func run(project, path, generator *string) error {

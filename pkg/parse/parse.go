@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"io/fs"
 	"path/filepath"
+	"strings"
 )
 
 // AstSchema is a simpler presentation of the ast of a project.
@@ -20,7 +21,14 @@ type Dependencies map[string]Dependency
 // Dependency represent a type that has been identified as a dependency.
 type Dependency struct {
 	Comment string
+	Imports []Import
 	Deps    map[string][]Dep
+}
+
+// Import represent an imported package.
+type Import struct {
+	Path     string
+	External bool
 }
 
 // Dep represent one dependency injected.
@@ -29,6 +37,7 @@ type Dep struct {
 	DependencyName string
 	VarName        string
 	Funcs          []string
+	External       bool
 }
 
 // Parse parses the project located under pathDir and returns an AstSchema.
@@ -78,7 +87,7 @@ func parseDir(path string, as *AstSchema) error {
 	for name, p := range dir {
 		m := map[string]Dependency{}
 		for _, f := range p.Files {
-			dependencies := parseFile(f)
+			dependencies := parseFile(f, as.ModulePath)
 			for depName, dep := range dependencies {
 				m[depName] = dep
 			}
@@ -91,7 +100,7 @@ func parseDir(path string, as *AstSchema) error {
 	return nil
 }
 
-func parseFile(f *ast.File) (dependencies Dependencies) {
+func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
 	dependencies = make(Dependencies, 0)
 	packageName := f.Name.Name
 	structs := map[string]structDecl{}
@@ -102,13 +111,14 @@ func parseFile(f *ast.File) (dependencies Dependencies) {
 		}
 	}
 
+	imports := parseImports(f, modulePath)
 	for _, decl := range f.Decls {
 		d, ok := decl.(*ast.FuncDecl)
 		if !ok {
 			continue
 		}
 		var deps map[string][]Dep
-		name, deps := searchProvider(d, structs, packageName)
+		name, deps := searchProvider(d, structs, packageName, imports)
 		if name == "" {
 			continue
 		}
@@ -121,4 +131,21 @@ func parseFile(f *ast.File) (dependencies Dependencies) {
 	}
 
 	return dependencies
+}
+
+func parseImports(f *ast.File, modulePath string) map[string]Import {
+	imports := make(map[string]Import, 0)
+	for _, im := range f.Imports {
+		path := strings.Trim(im.Path.Value, "\"")
+		split := strings.Split(path, "/")
+		importName := split[len(split)-1]
+		if im.Name != nil {
+			importName = im.Name.Name
+		}
+		imports[importName] = Import{
+			Path:     path,
+			External: !strings.Contains(path, modulePath),
+		}
+	}
+	return imports
 }
