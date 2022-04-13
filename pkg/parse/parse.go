@@ -25,6 +25,7 @@ type Dependency struct {
 	Deps    map[string][]Dep
 }
 
+// Import represent an imported package.
 type Import struct {
 	Path     string
 	External bool
