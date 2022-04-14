@@ -26,15 +26,6 @@ func TestParse_ext_dep(t *testing.T) {
 								External:       true,
 							},
 						},
-						"c": {
-							{
-								PackageName:    "ext_dep",
-								DependencyName: "string",
-								VarName:        "c",
-								Funcs:          nil,
-								External:       false, // TODO improve discovery of types
-							},
-						},
 					},
 				},
 			},
