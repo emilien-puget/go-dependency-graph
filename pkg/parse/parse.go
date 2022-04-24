@@ -36,7 +36,7 @@ type Dep struct {
 	PackageName    string
 	DependencyName string
 	VarName        string
-	Funcs          []string
+	Funcs          map[string]string
 	External       bool
 }
 
@@ -58,7 +58,7 @@ func Parse(pathDir string) (AstSchema, error) {
 		if d.IsDir() {
 			err := parseDir(path, &as)
 			if err != nil {
-				panic(err)
+				return err
 			}
 		}
 		return nil

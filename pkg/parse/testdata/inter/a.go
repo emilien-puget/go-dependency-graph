@@ -1,9 +1,11 @@
 package inter
 
+import "context"
+
 type A struct {
 	b interface {
-		FuncA()
-		FuncB()
+		FuncA(ctx context.Context) error
+		FuncB(context.Context) (err error)
 	}
 	d interface {
 		FuncA()

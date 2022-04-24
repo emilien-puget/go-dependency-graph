@@ -82,25 +82,6 @@ func isBuiltin(name string) bool {
 	return false
 }
 
-func getDepID(dep ast.Expr) (packageName, serviceName string) {
-	if depStar, ok := dep.(*ast.StarExpr); ok {
-		dep = depStar.X
-	}
-
-	switch p := dep.(type) {
-	case *ast.SelectorExpr:
-		ident, ok := p.X.(*ast.Ident)
-		if !ok {
-			return "", ""
-		}
-		return ident.Name, p.Sel.Name
-	case *ast.Ident:
-		return "", p.Name
-	}
-
-	return "", ""
-}
-
 // searchDependenciesAssignment parse the provider function to search for a return.
 // this return is then parsed to look for injected functions to complete the deps found in the previous step.
 func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep, s structDecl) {
@@ -138,13 +119,18 @@ func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]Dep, s structDecl) 
 		}
 		if _, ok := deps[x.String()]; ok {
 			for i := range deps[x.String()] {
-				deps[x.String()][i].Funcs = append(deps[x.String()][i].Funcs, value.Sel.String())
+				if deps[x.String()][i].Funcs == nil {
+					deps[x.String()][i].Funcs = make(map[string]string)
+				}
+				deps[x.String()][i].Funcs[value.Sel.String()] = ""
+				// deps[x.String()][i].Funcs, value.Sel.String()
 			}
 		}
 	case *ast.Ident:
 		if _, ok := deps[value.Name]; ok {
 			for i := range deps[value.Name] {
-				deps[value.Name][i].Funcs = s.fields[value.Name].methods
+				_ = i
+				// deps[value.Name][i].Funcs = s.fields[value.Name].methods
 			}
 		}
 	}

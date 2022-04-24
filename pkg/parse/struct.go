@@ -3,6 +3,7 @@ package parse
 import (
 	"go/ast"
 	"go/token"
+	"strings"
 )
 
 type structDecl struct {
@@ -11,7 +12,7 @@ type structDecl struct {
 }
 
 type field struct {
-	methods []string
+	methods map[string]string
 }
 
 func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
@@ -43,12 +44,42 @@ func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
 	return ts.Name.Name, s
 }
 
-func getMethods(f *ast.Field) []string {
-	var m []string
+func getMethods(f *ast.Field) map[string]string {
+	m := make(map[string]string)
 	if t, ok := f.Type.(*ast.InterfaceType); ok {
 		for _, methods := range t.Methods.List {
-			m = append(m, methods.Names[0].Name)
+			_, ok := m[methods.Names[0].Name]
+			if ok {
+				continue // methods already defined
+			}
+			funcType, ok := methods.Type.(*ast.FuncType)
+			if !ok {
+				continue // not a function
+			}
+			params := getProto(funcType.Params)
+			results := getProto(funcType.Results)
+			proto := "(" + strings.Join(params, ", ") + ")"
+			if len(results) > 0 {
+				proto += "(" + strings.Join(results, ", ") + ")"
+			}
+			m[methods.Names[0].Name] = proto
 		}
 	}
 	return m
+}
+
+func getProto(funcParam *ast.FieldList) (params []string) {
+	if funcParam == nil {
+		return params
+	}
+	for _, param := range funcParam.List {
+		proto := ""
+		if param.Names != nil {
+			proto += param.Names[0].Name
+		}
+		packageName, serviceName := getDepID(param.Type)
+		proto += packageName + "." + serviceName
+		params = append(params, proto)
+	}
+	return params
 }
