@@ -1,5 +1,7 @@
 package fn
 
+import "context"
+
 type B struct {
 	cFuncA func()
 }
@@ -10,8 +12,10 @@ func NewB(c *C) *B {
 	}
 }
 
-func (b B) FuncA() {
+func (b B) FuncA(ctx context.Context) error {
+	return nil
 }
 
-func (b B) FuncB() {
+func (b B) FuncB(_ context.Context) (err error) {
+	return nil
 }

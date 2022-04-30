@@ -13,26 +13,26 @@ func TestGenerateMermaidClassFromSchema(t *testing.T) {
 	file := &bytes.Buffer{}
 	buff := bufio.NewWriter(file)
 	err := GenerateClassFromSchema(buff, parse.AstSchema{
-		ModulePath: "testdata/fn",
+		ModulePath: "testdata/inter",
 		Packages: map[string]parse.Dependencies{
-			"fn": {
+			"inter": {
 				"A": {
 					Comment: "",
 					Deps: map[string][]parse.Dep{
 						"b": {
 							{
-								PackageName:    "fn",
+								PackageName:    "inter",
 								DependencyName: "B",
 								VarName:        "b",
-								Funcs:          []string{"FuncA", "FuncB"},
+								Funcs:          map[string]string{"FuncA": "(ctx context.Context) (error)", "FuncB": "(context.Context) (err error)"},
 							},
 						},
 						"d": {
 							{
-								PackageName:    "fn",
+								PackageName:    "inter",
 								DependencyName: "D",
 								VarName:        "d",
-								Funcs:          []string{"FuncA"},
+								Funcs:          map[string]string{"FuncA": "()"},
 							},
 						},
 					},
@@ -42,10 +42,10 @@ func TestGenerateMermaidClassFromSchema(t *testing.T) {
 					Deps: map[string][]parse.Dep{
 						"c": {
 							{
-								PackageName:    "fn",
+								PackageName:    "inter",
 								DependencyName: "C",
 								VarName:        "c",
-								Funcs:          []string{"FuncA"},
+								Funcs:          map[string]string{"FuncA": "()"},
 							},
 						},
 					},
@@ -62,7 +62,7 @@ func TestGenerateMermaidClassFromSchema(t *testing.T) {
 								PackageName:    "pa",
 								DependencyName: "A",
 								VarName:        "a",
-								Funcs:          []string{"FuncA"},
+								Funcs:          map[string]string{"FuncA": "()"},
 							},
 						},
 					},

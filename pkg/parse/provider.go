@@ -129,8 +129,7 @@ func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]Dep, s structDecl) 
 	case *ast.Ident:
 		if _, ok := deps[value.Name]; ok {
 			for i := range deps[value.Name] {
-				_ = i
-				// deps[value.Name][i].Funcs = s.fields[value.Name].methods
+				deps[value.Name][i].Funcs = s.fields[value.Name].methods
 			}
 		}
 	}

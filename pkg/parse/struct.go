@@ -46,8 +46,9 @@ func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
 
 func getMethods(f *ast.Field) map[string]string {
 	m := make(map[string]string)
-	if t, ok := f.Type.(*ast.InterfaceType); ok {
-		for _, methods := range t.Methods.List {
+	switch it := f.Type.(type) {
+	case *ast.InterfaceType: // dep is an interface
+		for _, methods := range it.Methods.List {
 			_, ok := m[methods.Names[0].Name]
 			if ok {
 				continue // methods already defined
@@ -56,29 +57,51 @@ func getMethods(f *ast.Field) map[string]string {
 			if !ok {
 				continue // not a function
 			}
-			params := getProto(funcType.Params)
-			results := getProto(funcType.Results)
-			proto := "(" + strings.Join(params, ", ") + ")"
-			if len(results) > 0 {
-				proto += "(" + strings.Join(results, ", ") + ")"
-			}
-			m[methods.Names[0].Name] = proto
+			m[methods.Names[0].Name] = getFuncProto(funcType)
 		}
+	case *ast.FuncType: // dep is an function
+		m[f.Names[0].Name] = getFuncProto(it)
+	case *ast.Ident: // dep is something identified
+		if it.Obj == nil {
+			return m
+		}
+		decl, ok := it.Obj.Decl.(*ast.TypeSpec)
+		if !ok {
+			return m
+		}
+		funcType, ok := decl.Type.(*ast.FuncType)
+		if !ok {
+			return m // not a function
+		}
+		m[f.Names[0].Name] = getFuncProto(funcType)
 	}
 	return m
 }
 
-func getProto(funcParam *ast.FieldList) (params []string) {
+func getFuncProto(it *ast.FuncType) string {
+	params := getFieldListProto(it.Params)
+	results := getFieldListProto(it.Results)
+	proto := "(" + strings.Join(params, ", ") + ")"
+	if len(results) > 0 {
+		proto += " (" + strings.Join(results, ", ") + ")"
+	}
+	return proto
+}
+
+func getFieldListProto(funcParam *ast.FieldList) (params []string) {
 	if funcParam == nil {
 		return params
 	}
 	for _, param := range funcParam.List {
 		proto := ""
 		if param.Names != nil {
-			proto += param.Names[0].Name
+			proto += param.Names[0].Name + " "
 		}
 		packageName, serviceName := getDepID(param.Type)
-		proto += packageName + "." + serviceName
+		if packageName != "" {
+			proto += packageName + "."
+		}
+		proto += serviceName
 		params = append(params, proto)
 	}
 	return params

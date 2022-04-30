@@ -13,6 +13,7 @@ import (
 type AstSchema struct {
 	ModulePath string
 	Packages   map[string]Dependencies
+	Decl       map[string][]string
 }
 
 // Dependencies contains all the dependencies of a package.
