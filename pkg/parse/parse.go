@@ -1,12 +1,15 @@
 package parse
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // AstSchema is a simpler presentation of the ast of a project.
@@ -87,7 +90,10 @@ func parseDir(path string, as *AstSchema) error {
 	for name, p := range dir {
 		m := map[string]Dependency{}
 		for _, f := range p.Files {
-			dependencies := parseFile(f, as.ModulePath)
+			dependencies, err := parseFile(f, as.ModulePath)
+			if err != nil {
+				return fmt.Errorf("parse file: %w", err)
+			}
 			for depName, dep := range dependencies {
 				m[depName] = dep
 			}
@@ -100,7 +106,7 @@ func parseDir(path string, as *AstSchema) error {
 	return nil
 }
 
-func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
+func parseFile(f *ast.File, modulePath string) (dependencies Dependencies, err error) {
 	dependencies = make(Dependencies, 0)
 	packageName := f.Name.Name
 	structs := map[string]structDecl{}
@@ -111,7 +117,10 @@ func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
 		}
 	}
 
-	imports := parseImports(f, modulePath)
+	imports, err := parseImports(f, modulePath)
+	if err != nil {
+		return nil, fmt.Errorf("parse imports: %w", err)
+	}
 	for _, decl := range f.Decls {
 		d, ok := decl.(*ast.FuncDecl)
 		if !ok {
@@ -130,15 +139,19 @@ func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
 		dependencies[name] = ser
 	}
 
-	return dependencies
+	return dependencies, err
 }
 
-func parseImports(f *ast.File, modulePath string) map[string]Import {
+func parseImports(f *ast.File, modulePath string) (map[string]Import, error) {
 	imports := make(map[string]Import, 0)
 	for _, im := range f.Imports {
 		path := strings.Trim(im.Path.Value, "\"")
-		split := strings.Split(path, "/")
-		importName := split[len(split)-1]
+		cfg := &packages.Config{Mode: packages.NeedName}
+		pkgs, err := packages.Load(cfg, path)
+		if err != nil {
+			return nil, fmt.Errorf("packages load: %w", err)
+		}
+		importName := pkgs[0].Name
 		if im.Name != nil {
 			importName = im.Name.Name
 		}
@@ -147,5 +160,5 @@ func parseImports(f *ast.File, modulePath string) map[string]Import {
 			External: !strings.Contains(path, modulePath),
 		}
 	}
-	return imports
+	return imports, nil
 }

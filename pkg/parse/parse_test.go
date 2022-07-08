@@ -175,6 +175,34 @@ func TestParse_inter(t *testing.T) {
 	}, parse)
 }
 
+func TestParse_package_name_mismatch(t *testing.T) {
+	t.Parallel()
+	parse, err := Parse("testdata/package_name_mismatch")
+	assert.NoError(t, err)
+
+	assert.Equal(t, AstSchema{
+		ModulePath: "testdata/package_name_mismatch",
+		Packages: map[string]Dependencies{
+			"package_name_mismatch": {
+				"A": {
+					Comment: "",
+					Deps: map[string][]Dep{
+						"encoder": {
+							{
+								PackageName:    "gopkg.in/yaml.v3",
+								DependencyName: "Encoder",
+								VarName:        "encoder",
+								External:       true,
+								Funcs:          nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}, parse)
+}
+
 func TestParse_wire_sample(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/wire_sample")
