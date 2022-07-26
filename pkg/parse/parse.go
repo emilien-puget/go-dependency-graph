@@ -71,7 +71,7 @@ func Parse(pathDir string) (AstSchema, error) {
 	}
 	pkgs, err := packages.Load(cfg, dirs...)
 	for i := range pkgs {
-		err := parsePackage(pkgs[i], &as)
+		parsePackage(pkgs[i], &as)
 		if err != nil {
 			return AstSchema{}, err
 		}
@@ -80,7 +80,7 @@ func Parse(pathDir string) (AstSchema, error) {
 	return as, nil
 }
 
-func parsePackage(p *packages.Package, as *AstSchema) error {
+func parsePackage(p *packages.Package, as *AstSchema) {
 	for _, f := range p.Syntax {
 		dependencies := parseFile(f, p, as.ModulePath)
 		for depName, dep := range dependencies {
@@ -90,7 +90,6 @@ func parsePackage(p *packages.Package, as *AstSchema) error {
 			as.Packages[p.Name][depName] = dep
 		}
 	}
-	return nil
 }
 
 func parseFile(f *ast.File, p *packages.Package, modulePath string) (dependencies Dependencies) {
