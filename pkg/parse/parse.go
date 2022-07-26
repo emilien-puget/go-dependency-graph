@@ -3,7 +3,6 @@ package parse
 import (
 	"go/ast"
 	"io/fs"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -59,7 +58,7 @@ func Parse(pathDir string) (AstSchema, error) {
 			return err
 		}
 		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
-			dir, _ := path.Split(p)
+			dir, _ := filepath.Split(p)
 			dirs = append(dirs, dir)
 			return nil
 		}
