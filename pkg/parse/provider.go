@@ -2,9 +2,10 @@ package parse
 
 import (
 	"go/ast"
+	"go/types"
 )
 
-func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packageName string, imports map[string]Import) (name string, deps map[string][]Dep) {
+func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packageName string, imports map[string]Import, typesInfo *types.Info) (name string, deps map[string][]Dep) {
 	if funcdecl.Name.Name[:3] != "New" {
 		return name, deps
 	}
@@ -14,7 +15,7 @@ func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packa
 		return "", nil
 	}
 
-	deps = searchDependencies(funcdecl, packageName, imports)
+	deps = searchDependencies(funcdecl, packageName, imports, typesInfo)
 
 	searchDependenciesAssignment(funcdecl, deps, s)
 	return name, deps
@@ -22,6 +23,10 @@ func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packa
 
 // searchDependencyName search the created dependency as the first variable returned.
 func searchDependencyName(funcdecl *ast.FuncDecl) string {
+	results := funcdecl.Type.Results
+	if results == nil {
+		return ""
+	}
 	switch t := funcdecl.Type.Results.List[0].Type.(type) { // get the type of the dependency.
 	case *ast.StarExpr: // dependency returned as a pointer.
 		ident, ok := t.X.(*ast.Ident)
@@ -36,14 +41,14 @@ func searchDependencyName(funcdecl *ast.FuncDecl) string {
 }
 
 // searchDependencies returns the dependency found in the provider type declaration.
-func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]Import) (deps map[string][]Dep) {
+func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]Import, info *types.Info) (deps map[string][]Dep) {
 	deps = map[string][]Dep{}
 	for _, param := range funcdecl.Type.Params.List {
-		packageName, serviceName := getDepID(param.Type)
-		if serviceName == "" {
+		if !checkDepsMethods(info.TypeOf(param.Type)) { // ignore dependencies without methods
 			continue
 		}
-		if isBuiltin(serviceName) { // skip if the dependency is a builtin type
+		packageName, serviceName := getDepID(param.Type)
+		if serviceName == "" {
 			continue
 		}
 		imp := imports[packageName]
@@ -68,15 +73,17 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 	return deps
 }
 
-func isBuiltin(name string) bool {
-	switch name {
-	case "unsafe.Pointer", "bool", "byte",
-		"complex64", "complex128",
-		"error",
-		"float32", "float64",
-		"int", "int8", "int16", "int32", "int64",
-		"rune", "string",
-		"uint", "uint8", "uint16", "uint32", "uint64", "uintptr":
+func checkDepsMethods(t types.Type) bool {
+	ptrType, ok := t.(*types.Pointer)
+	if ok {
+		t = ptrType.Elem()
+	}
+	namedType, ok := t.(*types.Named)
+	if !ok {
+		return false
+	}
+
+	if namedType.NumMethods() > 0 {
 		return true
 	}
 	return false

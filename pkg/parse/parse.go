@@ -2,11 +2,11 @@ package parse
 
 import (
 	"go/ast"
-	"go/parser"
-	"go/token"
 	"io/fs"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // AstSchema is a simpler presentation of the ast of a project.
@@ -51,56 +51,47 @@ func Parse(pathDir string) (AstSchema, error) {
 		Packages:   map[string]Dependencies{},
 	}
 
-	err = filepath.WalkDir(pathDir, func(path string, d fs.DirEntry, err error) error {
+	cfg := &packages.Config{Dir: pathDir, Mode: packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportsFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Tests: false}
+	var dirs []string
+	err = filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
-			panic(err)
+			return err
 		}
-		if d.IsDir() {
-			err := parseDir(path, &as)
-			if err != nil {
-				panic(err)
-			}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
+			dir, _ := filepath.Split(p)
+			dirs = append(dirs, dir)
+			return nil
 		}
+
 		return nil
 	})
 	if err != nil {
 		return AstSchema{}, err
 	}
+	pkgs, err := packages.Load(cfg, dirs...)
+	for i := range pkgs {
+		parsePackage(pkgs[i], &as)
+		if err != nil {
+			return AstSchema{}, err
+		}
+	}
 
 	return as, nil
 }
 
-func parseDir(path string, as *AstSchema) error {
-	fset := token.NewFileSet()
-
-	dir, err := parser.ParseDir(fset, path, func(info fs.FileInfo) bool {
-		n := info.Name()
-		if len(n) > 8 && n[len(n)-8:] == "_test.go" {
-			return false
-		}
-		return true
-	}, parser.AllErrors|parser.ParseComments)
-	if err != nil {
-		return err
-	}
-
-	for name, p := range dir {
-		m := map[string]Dependency{}
-		for _, f := range p.Files {
-			dependencies := parseFile(f, as.ModulePath)
-			for depName, dep := range dependencies {
-				m[depName] = dep
+func parsePackage(p *packages.Package, as *AstSchema) {
+	for _, f := range p.Syntax {
+		dependencies := parseFile(f, p, as.ModulePath)
+		for depName, dep := range dependencies {
+			if _, ok := as.Packages[p.Name]; !ok {
+				as.Packages[p.Name] = make(Dependencies)
 			}
-		}
-
-		if len(m) != 0 {
-			as.Packages[name] = m
+			as.Packages[p.Name][depName] = dep
 		}
 	}
-	return nil
 }
 
-func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
+func parseFile(f *ast.File, p *packages.Package, modulePath string) (dependencies Dependencies) {
 	dependencies = make(Dependencies, 0)
 	packageName := f.Name.Name
 	structs := map[string]structDecl{}
@@ -111,14 +102,14 @@ func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
 		}
 	}
 
-	imports := parseImports(f, modulePath)
+	imports := parseImports(f, modulePath, p.Imports)
 	for _, decl := range f.Decls {
 		d, ok := decl.(*ast.FuncDecl)
 		if !ok {
 			continue
 		}
 		var deps map[string][]Dep
-		name, deps := searchProvider(d, structs, packageName, imports)
+		name, deps := searchProvider(d, structs, packageName, imports, p.TypesInfo)
 		if name == "" {
 			continue
 		}
@@ -133,18 +124,17 @@ func parseFile(f *ast.File, modulePath string) (dependencies Dependencies) {
 	return dependencies
 }
 
-func parseImports(f *ast.File, modulePath string) map[string]Import {
+func parseImports(f *ast.File, modulePath string, imp map[string]*packages.Package) map[string]Import {
 	imports := make(map[string]Import, 0)
 	for _, im := range f.Imports {
-		path := strings.Trim(im.Path.Value, "\"")
-		split := strings.Split(path, "/")
-		importName := split[len(split)-1]
+		p := strings.Trim(im.Path.Value, "\"")
+		importName := imp[p].Name
 		if im.Name != nil {
 			importName = im.Name.Name
 		}
 		imports[importName] = Import{
-			Path:     path,
-			External: !strings.Contains(path, modulePath),
+			Path:     p,
+			External: !strings.Contains(p, modulePath),
 		}
 	}
 	return imports

@@ -4,12 +4,16 @@ import hblep "net/http"
 
 type A struct {
 	client *hblep.Client
-	c      string
+	c      notAString
+	d      string
 }
 
-func NewA(b *hblep.Client, c string) *A {
+type notAString string
+
+func NewA(b *hblep.Client, c notAString, d string) *A {
 	return &A{
 		client: b,
 		c:      c,
+		d:      d,
 	}
 }
