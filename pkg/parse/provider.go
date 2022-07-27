@@ -23,6 +23,10 @@ func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packa
 
 // searchDependencyName search the created dependency as the first variable returned.
 func searchDependencyName(funcdecl *ast.FuncDecl) string {
+	results := funcdecl.Type.Results
+	if results == nil {
+		return ""
+	}
 	switch t := funcdecl.Type.Results.List[0].Type.(type) { // get the type of the dependency.
 	case *ast.StarExpr: // dependency returned as a pointer.
 		ident, ok := t.X.(*ast.Ident)
