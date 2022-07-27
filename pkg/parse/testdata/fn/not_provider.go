@@ -1,0 +1,5 @@
+package fn
+
+func NewStuff() {
+
+}
