@@ -3,30 +3,51 @@ run:
 linters:
   disable-all: true
   enable:
+    # Format
     - "asciicheck"
-    - "bodyclose"
-    - "deadcode"
-    - "gocognit"
-    - "gocritic"
-    - "gocyclo"
-    - "godot"
-    - "gosimple"
-    - "goerr113"
+    - "bidichk"
     - "gofmt"
     - "gofumpt"
     - "goimports"
-    - "revive"
-    - "govet"
-    - "ineffassign"
-    - "megacheck"
+    # Comments
     - "misspell"
-    - "nakedret"
-    - "nolintlint"
-    - "structcheck"
+    - "revive"
+    - "godot"
+    # Context
+    - "containedctx"
+    - "contextcheck"
+    # Simplify
+    - "ineffassign"
+    - "gosimple"
+    - "unused"
     - "unconvert"
     - "unparam"
-    - "varcheck"
+    - "dupl"
+    - "typecheck"
+    - "goconst"
+    - "prealloc"
+    # Error
+    - "goerr113"
+    - "errchkjson"
+    - "nilerr"
+    - "nilnil"
+    # Debug
+    - "govet"
+    - "bodyclose"
+    - "staticcheck"
+    # Code Complexity
+    - "maintidx"
+    - "gocognit"
+    - "gocritic"
+    - "gocyclo"
+    - "nakedret"
+    - "nolintlint"
 linters-settings:
+  revive:
+    rules:
+      - name: package-comments
+        severity: warning
+        disabled: true
   depguard:
     list-type: blacklist
     include-go-root: true
@@ -50,6 +71,10 @@ linters-settings:
     require-explanation: true
     require-specific: true
 issues:
+  exclude-rules:
+    - path: (.+)_test.go
+      linters:
+        - dupl
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
