@@ -51,7 +51,7 @@ func Parse(pathDir string) (AstSchema, error) {
 		Packages:   map[string]Dependencies{},
 	}
 
-	cfg := &packages.Config{Dir: pathDir, Mode: packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportsFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Tests: false}
+	cfg := &packages.Config{Dir: pathDir, Mode: packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Tests: false}
 	var dirs []string
 	err = filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
