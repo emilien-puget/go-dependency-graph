@@ -51,7 +51,7 @@ func GenerateComponentFromSchema(writer *bufio.Writer, s parse.AstSchema) error 
 
 func printExternalRelations(writer *bufio.Writer, externalRelations map[string]string) error {
 	for dep, rel := range externalRelations {
-		_, err := writer.WriteString(fmt.Sprintf("Component(%s, %q, \"\", \"\", $tags=\"external\")\n", strings.ReplaceAll(dep, "/", packageSeparator), dep))
+		_, err := fmt.Fprintf(writer, "Component(%s, %q, \"\", \"\", $tags=\"external\")\n", strings.ReplaceAll(dep, "/", packageSeparator), dep)
 		if err != nil {
 			return err
 		}

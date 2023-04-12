@@ -1,5 +1,4 @@
 package fn
 
 func NewStuff() {
-
 }
