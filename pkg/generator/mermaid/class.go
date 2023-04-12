@@ -35,13 +35,13 @@ func handlePackages(writer *bufio.Writer, packageName string, services parse.Dep
 			for _, d := range deps {
 				if len(d.Funcs) != 0 {
 					for _, fn := range d.Funcs {
-						_, err := writer.WriteString(fmt.Sprintf("%s ..> %s: %s\n", fqdn, strings.ReplaceAll(d.PackageName, "/", packageSeparator)+packageSeparator+d.DependencyName, fn))
+						_, err := fmt.Fprintf(writer, "%s ..> %s: %s\n", fqdn, strings.ReplaceAll(d.PackageName, "/", packageSeparator)+packageSeparator+d.DependencyName, fn)
 						if err != nil {
 							return err
 						}
 					}
 				} else {
-					_, err := writer.WriteString(fmt.Sprintf("%s ..> %s\n", fqdn, strings.ReplaceAll(d.PackageName, "/", packageSeparator)+packageSeparator+d.DependencyName))
+					_, err := fmt.Fprintf(writer, "%s ..> %s\n", fqdn, strings.ReplaceAll(d.PackageName, "/", packageSeparator)+packageSeparator+d.DependencyName)
 					if err != nil {
 						return err
 					}
