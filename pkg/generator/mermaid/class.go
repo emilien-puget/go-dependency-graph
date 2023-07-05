@@ -34,9 +34,18 @@ func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 			return err
 		}
 	}
-	writer.Write(classBuf.Bytes())
-	writer.WriteString("\n")
-	writer.Write(relationBuf.Bytes())
+	_, err = writer.Write(classBuf.Bytes())
+	if err != nil {
+		return err
+	}
+	_, err = writer.WriteString("\n")
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(relationBuf.Bytes())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -77,7 +86,7 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 
 	for _, deps := range service.Deps {
 		sort.Slice(deps, func(i, j int) bool {
-			return deps[i].DependencyName < deps[j].DependencyName
+			return deps[i].PackageName+deps[i].DependencyName < deps[j].PackageName+deps[j].DependencyName
 		})
 		for _, d := range deps {
 			s := d.PackageName + packageSeparator + d.DependencyName
