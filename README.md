@@ -43,11 +43,37 @@ http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2C
 
 ```mermaid
 classDiagram
-inter_A ..> inter_B: FuncA
-inter_A ..> inter_B: FuncB
-inter_A ..> inter_D: FuncA
-inter_B ..> inter_C: FuncA
-inter_D ..> pa_A: FuncA
+
+  namespace inter {
+    class `inter/A` {
+    }
+
+    class `inter/B` {
+      FuncA()
+      FuncB()
+    }
+
+    class `inter/C` {
+      FuncA()
+    }
+
+    class `inter/D` {
+      FuncA()
+    }
+
+  }
+  namespace pa {
+    class `pa/A` {
+      FuncA()
+    }
+
+  }
+  `inter/A` ..> `inter/B`: FuncA
+  `inter/A` ..> `inter/B`: FuncB
+  `inter/A` ..> `inter/D`: FuncA
+  `inter/B` ..> `inter/C`: FuncA
+  `inter/D` ..> `pa/A`: FuncA
+
 ```
 
 ## [Wire tutorial](https://github.com/google/wire/blob/main/_tutorial/main.go)

@@ -5,20 +5,20 @@ import (
 	"go/types"
 )
 
-func searchProvider(funcdecl *ast.FuncDecl, structs map[string]structDecl, packageName string, imports map[string]Import, typesInfo *types.Info) (name string, deps map[string][]Dep) {
+func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]Import, typesInfo *types.Info, t map[string]map[string]*StructDecl) (name string, deps map[string][]Dep, decl *StructDecl) {
 	if funcdecl.Name.Name[:3] != "New" {
-		return name, deps
+		return "", nil, nil
 	}
 	name = searchDependencyName(funcdecl)
-	s, ok := structs[packageName+"."+name]
+	decl, ok := t[packageName][name]
 	if !ok {
-		return "", nil
+		return "", nil, nil
 	}
 
 	deps = searchDependencies(funcdecl, packageName, imports, typesInfo)
 
-	searchDependenciesAssignment(funcdecl, deps, s)
-	return name, deps
+	searchDependenciesAssignment(funcdecl, deps, decl)
+	return name, deps, decl
 }
 
 // searchDependencyName search the created dependency as the first variable returned.
@@ -110,7 +110,7 @@ func getDepID(dep ast.Expr) (packageName, serviceName string) {
 
 // searchDependenciesAssignment parse the provider function to search for a return.
 // this return is then parsed to look for injected functions to complete the deps found in the previous step.
-func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep, s structDecl) {
+func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep, s *StructDecl) {
 	if funcdecl.Body != nil {
 		for _, stmt := range funcdecl.Body.List {
 			retStmt, ok := stmt.(*ast.ReturnStmt)
@@ -136,7 +136,7 @@ func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep,
 	}
 }
 
-func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]Dep, s structDecl) {
+func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]Dep, s *StructDecl) {
 	switch value := kvExpr.Value.(type) {
 	case *ast.SelectorExpr:
 		x, ok := value.X.(*ast.Ident)

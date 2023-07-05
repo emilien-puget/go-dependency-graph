@@ -3,7 +3,7 @@ package fn
 import "testdata/fn/pa"
 
 type D struct {
-	PaAFuncA func()
+	PaAFuncA func(toto string) (titi int, err error)
 }
 
 func NewD(a *pa.A) *D {

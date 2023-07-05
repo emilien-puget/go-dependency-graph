@@ -75,10 +75,17 @@ func TestParse_fn(t *testing.T) {
 							},
 						},
 					},
+					Methods: []string{
+						"FuncA()",
+						"FuncB()",
+					},
 				},
 				"C": {
 					Comment: "",
 					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA()",
+					},
 				},
 				"D": {
 					Comment: "",
@@ -92,12 +99,18 @@ func TestParse_fn(t *testing.T) {
 							},
 						},
 					},
+					Methods: []string{
+						"FuncA()",
+					},
 				},
 			},
 			"pa": {
 				"A": {
 					Comment: "A pa struct.",
 					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA(toto string) (titi int, err error)",
+					},
 				},
 			},
 		},
@@ -146,10 +159,17 @@ func TestParse_inter(t *testing.T) {
 							},
 						},
 					},
+					Methods: []string{
+						"FuncA()",
+						"FuncB()",
+					},
 				},
 				"C": {
 					Comment: "",
 					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA()",
+					},
 				},
 				"D": {
 					Comment: "",
@@ -163,12 +183,18 @@ func TestParse_inter(t *testing.T) {
 							},
 						},
 					},
+					Methods: []string{
+						"FuncA()",
+					},
 				},
 			},
 			"pa": {
 				"A": {
 					Comment: "A pa struct.",
 					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA()",
+					},
 				},
 			},
 		},
@@ -196,10 +222,16 @@ func TestParse_wire_sample(t *testing.T) {
 							},
 						},
 					},
+					Methods: []string{
+						"Start()",
+					},
 				},
 				"Greeter": {
 					Comment: "Greeter is the type charged with greeting guests.",
 					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"Greet() ( testdata/wire_sample.Message)",
+					},
 				},
 			},
 		},
