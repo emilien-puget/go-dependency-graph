@@ -5,17 +5,25 @@ import (
 	"go/token"
 )
 
-type structDecl struct {
-	doc    string
-	fields map[string]field
-}
-
-type field struct {
+type StructDecl struct {
+	doc     string
+	fields  map[string]field
 	methods []string
 }
 
-func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
-	s := structDecl{}
+const (
+	fieldKindInterface = "interface"
+	fieldKindFunc      = "func"
+)
+
+type field struct {
+	kind    string
+	methods []string
+	fn      string
+}
+
+func searchStructDecl(decl *ast.GenDecl) (string, StructDecl) {
+	s := StructDecl{}
 	if decl.Tok != token.TYPE {
 		return "", s
 	}
@@ -24,31 +32,9 @@ func searchStructDecl(decl *ast.GenDecl) (string, structDecl) {
 	if !ok {
 		return "", s
 	}
-	st, ok := ts.Type.(*ast.StructType)
-	if !ok {
-		return "", s
-	}
-
-	fields := map[string]field{}
-	for _, f := range st.Fields.List {
-		fields[f.Names[0].Name] = field{
-			methods: getMethods(f),
-		}
-	}
-	s.fields = fields
 
 	if decl.Doc != nil {
 		s.doc = decl.Doc.List[0].Text
 	}
 	return ts.Name.Name, s
-}
-
-func getMethods(f *ast.Field) []string {
-	var m []string
-	if t, ok := f.Type.(*ast.InterfaceType); ok {
-		for _, methods := range t.Methods.List {
-			m = append(m, methods.Names[0].Name)
-		}
-	}
-	return m
 }

@@ -3,12 +3,13 @@ package parse
 import (
 	"io"
 	"os"
+	"path/filepath"
 
 	"golang.org/x/mod/modfile"
 )
 
 func getModulePath(root string) (string, error) {
-	gomodPath := root + "/go.mod"
+	gomodPath := filepath.Join(root, "go.mod")
 	open, err := os.Open(gomodPath)
 	if err != nil {
 		return "", err

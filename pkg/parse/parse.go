@@ -20,9 +20,11 @@ type Dependencies map[string]Dependency
 
 // Dependency represent a type that has been identified as a dependency.
 type Dependency struct {
-	Comment string
-	Imports []Import
-	Deps    map[string][]Dep
+	Methods      []string
+	Comment      string
+	Imports      []Import
+	Deps         map[string][]Dep
+	ExternalDeps map[string][]Dep
 }
 
 // Import represent an imported package.
@@ -68,9 +70,17 @@ func Parse(pathDir string) (AstSchema, error) {
 	if err != nil {
 		return AstSchema{}, err
 	}
+	types := make(map[string]map[string]*StructDecl)
 	pkgs, err := packages.Load(cfg, dirs...)
 	for i := range pkgs {
-		parsePackage(pkgs[i], &as)
+		pkgType := ExtractTypes(pkgs[i])
+		if err != nil {
+			return AstSchema{}, err
+		}
+		types[pkgs[i].Name] = pkgType
+	}
+	for i := range pkgs {
+		parsePackage(pkgs[i], &as, types)
 		if err != nil {
 			return AstSchema{}, err
 		}
@@ -79,9 +89,9 @@ func Parse(pathDir string) (AstSchema, error) {
 	return as, nil
 }
 
-func parsePackage(p *packages.Package, as *AstSchema) {
+func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*StructDecl) {
 	for _, f := range p.Syntax {
-		dependencies := parseFile(f, p, as.ModulePath)
+		dependencies := parseFile(f, p, as.ModulePath, types)
 		for depName, dep := range dependencies {
 			if _, ok := as.Packages[p.Name]; !ok {
 				as.Packages[p.Name] = make(Dependencies)
@@ -91,10 +101,10 @@ func parsePackage(p *packages.Package, as *AstSchema) {
 	}
 }
 
-func parseFile(f *ast.File, p *packages.Package, modulePath string) (dependencies Dependencies) {
+func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*StructDecl) (dependencies Dependencies) {
 	dependencies = make(Dependencies, 0)
 	packageName := f.Name.Name
-	structs := map[string]structDecl{}
+	structs := map[string]StructDecl{}
 	for _, decl := range f.Decls {
 		if d, ok := decl.(*ast.GenDecl); ok {
 			name, structDecl := searchStructDecl(d)
@@ -109,12 +119,13 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string) (dependencie
 			continue
 		}
 		var deps map[string][]Dep
-		name, deps := searchProvider(d, structs, packageName, imports, p.TypesInfo)
+		name, deps, sDecl := searchProvider(d, packageName, imports, p.TypesInfo, types)
 		if name == "" {
 			continue
 		}
 		ser := Dependency{}
 		ser.Deps = deps
+		ser.Methods = sDecl.methods
 		if len(structs[packageName+"."+name].doc) > 3 {
 			ser.Comment = structs[packageName+"."+name].doc[3:]
 		}
