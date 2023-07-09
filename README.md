@@ -2,6 +2,11 @@
 
 A tool to build dependency graph for go programs based on dependency injection functions.
 
+# Install
+
+```
+go install github.com/emilien-puget/go-dependency-graph/cmd/go-dependency-graph
+```
 # Note regarding mermaid
 
 GitHub doesn't support the namespace feature of the mermaidjs class diagram, you can use the
