@@ -16,7 +16,7 @@ import (
 func main() {
 	project := flag.String("project", "", "the path of the project to inspect")
 	path := flag.String("result", "", "the path of the generated file, not used if stdout is piped")
-	generator := flag.String("generator", "c4_plantuml_component", "the name of the generator to use, [c4_plantuml_component, json], default c4_plantuml_component")
+	generator := flag.String("generator", "c4_plantuml_component", "the name of the generator to use, [c4_plantuml_component, mermaid_class, json], default c4_plantuml_component")
 	flag.Parse()
 
 	err := run(project, path, generator)
