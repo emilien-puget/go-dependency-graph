@@ -2,9 +2,14 @@
 
 A tool to build dependency graph for go programs based on dependency injection functions.
 
+# Note regarding mermaid
+
+GitHub doesn't support the namespace feature of the mermaidjs class diagram, you can use the
+cli https://github.com/mermaid-js/mermaid-cli to generate a svg/png/pdf file.
+
 # Example
 
-## [Simple example with interfaces](./pkg/parse/testdata/inter) 
+## [Simple example with interfaces](./pkg/parse/testdata/inter)
 
 ### c4 plantuml component
 
@@ -44,35 +49,35 @@ http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2C
 ```mermaid
 classDiagram
 
-  namespace inter {
-    class `inter/A` {
-    }
+    namespace inter {
+        class `inter/A` {
+        }
 
-    class `inter/B` {
-      FuncA()
-      FuncB()
-    }
+        class `inter/B` {
+            FuncA()
+            FuncB()
+        }
 
-    class `inter/C` {
-      FuncA()
-    }
+        class `inter/C` {
+            FuncA()
+        }
 
-    class `inter/D` {
-      FuncA()
-    }
+        class `inter/D` {
+            FuncA()
+        }
 
-  }
-  namespace pa {
-    class `pa/A` {
-      FuncA()
     }
+    namespace pa {
+        class `pa/A` {
+            FuncA()
+        }
 
-  }
-  `inter/A` ..> `inter/B`: FuncA
-  `inter/A` ..> `inter/B`: FuncB
-  `inter/A` ..> `inter/D`: FuncA
-  `inter/B` ..> `inter/C`: FuncA
-  `inter/D` ..> `pa/A`: FuncA
+    }
+    `inter/A` ..> `inter/B`: FuncA
+    `inter/A` ..> `inter/B`: FuncB
+    `inter/A` ..> `inter/D`: FuncA
+    `inter/B` ..> `inter/C`: FuncA
+    `inter/D` ..> `pa/A`: FuncA
 
 ```
 
@@ -103,8 +108,8 @@ http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2C
 
 ```mermaid
 classDiagram
-main_Greeter ..> main_Message
-main_Event ..> main_Greeter
+    main_Greeter ..> main_Message
+    main_Event ..> main_Greeter
 ```
 
 # Installation
