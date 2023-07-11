@@ -5,7 +5,7 @@ A tool to build dependency graph for go programs based on dependency injection f
 # Install
 
 ```
-go install github.com/emilien-puget/go-dependency-graph/cmd/go-dependency-graph
+go install github.com/emilien-puget/go-dependency-graph/cmd/go-dependency-graph@latest
 ```
 # Note regarding mermaid
 
