@@ -71,14 +71,18 @@ func Parse(pathDir string) (AstSchema, error) {
 		return AstSchema{}, err
 	}
 	types := make(map[string]map[string]*StructDecl)
+	typesInter := make(map[string]map[string]*InterDecl)
 	pkgs, err := packages.Load(cfg, dirs...)
 	for i := range pkgs {
-		pkgType := ExtractTypes(pkgs[i])
+		pkgType, pkgInter := ExtractTypes(pkgs[i])
 		if err != nil {
 			return AstSchema{}, err
 		}
 		types[pkgs[i].Name] = pkgType
+		typesInter[pkgs[i].Name] = pkgInter
 	}
+
+	assoInterStruct(typesInter, types)
 	for i := range pkgs {
 		parsePackage(pkgs[i], &as, types)
 		if err != nil {
@@ -87,6 +91,34 @@ func Parse(pathDir string) (AstSchema, error) {
 	}
 
 	return as, nil
+}
+func assoInterStruct(interds map[string]map[string]*InterDecl, structds map[string]map[string]*StructDecl) {
+	for s := range interds {
+		for interd := range interds[s] {
+
+			for s2 := range structds {
+				for s3 := range structds[s2] {
+					funcName(interds, structds, s2, s3, s, interd)
+				}
+			}
+
+		}
+	}
+}
+
+func funcName(interds map[string]map[string]*InterDecl, structds map[string]map[string]*StructDecl, s2 string, s3 string, s string, interd string) {
+	if len(structds[s2][s3].methods) == len(interds[s][interd].methods) {
+		for i := range structds[s2][s3].methods {
+			if structds[s2][s3].methods[i] != interds[s][interd].methods[i] {
+				return
+			}
+		}
+		_, ok := interds[s][interd].implems[s2]
+		if !ok {
+			interds[s][interd].implems[s2] = make(map[string]*StructDecl)
+		}
+		interds[s][interd].implems[s2][s3] = structds[s2][s3]
+	}
 }
 
 func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*StructDecl) {
@@ -104,10 +136,10 @@ func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[strin
 func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*StructDecl) (dependencies Dependencies) {
 	dependencies = make(Dependencies, 0)
 	packageName := f.Name.Name
-	structs := map[string]StructDecl{}
+	structs := map[string]string{}
 	for _, decl := range f.Decls {
 		if d, ok := decl.(*ast.GenDecl); ok {
-			name, structDecl := searchStructDecl(d)
+			name, structDecl := searchStructDeclDoc(d)
 			structs[packageName+"."+name] = structDecl
 		}
 	}
@@ -126,8 +158,8 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 		ser := Dependency{}
 		ser.Deps = deps
 		ser.Methods = sDecl.methods
-		if len(structs[packageName+"."+name].doc) > 3 {
-			ser.Comment = structs[packageName+"."+name].doc[3:]
+		if len(structs[packageName+"."+name]) > 3 {
+			ser.Comment = structs[packageName+"."+name][3:]
 		}
 		dependencies[name] = ser
 	}

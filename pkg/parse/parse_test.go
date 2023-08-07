@@ -117,6 +117,90 @@ func TestParse_fn(t *testing.T) {
 	}, parse)
 }
 
+func TestParse_named_inter(t *testing.T) {
+	t.Parallel()
+	parse, err := Parse("testdata/named_inter")
+	assert.NoError(t, err)
+
+	assert.Equal(t, AstSchema{
+		ModulePath: "testdata/inter",
+		Packages: map[string]Dependencies{
+			"inter": {
+				"A": {
+					Comment: "",
+					Deps: map[string][]Dep{
+						"b": {
+							{
+								PackageName:    "inter",
+								DependencyName: "B",
+								VarName:        "b",
+								Funcs:          []string{"FuncA", "FuncB"},
+							},
+						},
+						"d": {
+							{
+								PackageName:    "inter",
+								DependencyName: "D",
+								VarName:        "d",
+								Funcs:          []string{"FuncA"},
+							},
+						},
+					},
+				},
+				"B": {
+					Comment: "",
+					Deps: map[string][]Dep{
+						"c": {
+							{
+								PackageName:    "inter",
+								DependencyName: "C",
+								VarName:        "c",
+								Funcs:          []string{"FuncA"},
+							},
+						},
+					},
+					Methods: []string{
+						"FuncA()",
+						"FuncB()",
+					},
+				},
+				"C": {
+					Comment: "",
+					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA()",
+					},
+				},
+				"D": {
+					Comment: "",
+					Deps: map[string][]Dep{
+						"a": {
+							{
+								PackageName:    "pa",
+								DependencyName: "A",
+								VarName:        "a",
+								Funcs:          []string{"FuncA"},
+							},
+						},
+					},
+					Methods: []string{
+						"FuncA()",
+					},
+				},
+			},
+			"pa": {
+				"A": {
+					Comment: "A pa struct.",
+					Deps:    map[string][]Dep{},
+					Methods: []string{
+						"FuncA()",
+					},
+				},
+			},
+		},
+	}, parse)
+}
+
 func TestParse_inter(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/inter")
