@@ -6,7 +6,6 @@ import (
 )
 
 type StructDecl struct {
-	doc     string
 	fields  map[string]field
 	methods []string
 }
@@ -22,19 +21,19 @@ type field struct {
 	fn      string
 }
 
-func searchStructDecl(decl *ast.GenDecl) (string, StructDecl) {
-	s := StructDecl{}
+func searchStructDecl(decl *ast.GenDecl) (string, string) {
 	if decl.Tok != token.TYPE {
-		return "", s
+		return "", ""
 	}
 	spec := decl.Specs[0]
 	ts, ok := spec.(*ast.TypeSpec)
 	if !ok {
-		return "", s
+		return "", ""
 	}
 
+	var doc string
 	if decl.Doc != nil {
-		s.doc = decl.Doc.List[0].Text
+		doc = decl.Doc.List[0].Text
 	}
-	return ts.Name.Name, s
+	return ts.Name.Name, doc
 }
