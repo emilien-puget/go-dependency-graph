@@ -4,7 +4,7 @@ import "testdata/inter/pa"
 
 type D struct {
 	a interface {
-		FuncA()
+		FuncFoo(foo string) (bar int, err error)
 	}
 }
 

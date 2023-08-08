@@ -5,7 +5,7 @@ import (
 	"go/token"
 )
 
-type StructDecl struct {
+type structDecl struct {
 	fields  map[string]field
 	methods []string
 }
@@ -21,7 +21,7 @@ type field struct {
 	fn      string
 }
 
-func searchStructDecl(decl *ast.GenDecl) (string, string) {
+func searchStructDecl(decl *ast.GenDecl) (structName, doc string) {
 	if decl.Tok != token.TYPE {
 		return "", ""
 	}
@@ -31,7 +31,6 @@ func searchStructDecl(decl *ast.GenDecl) (string, string) {
 		return "", ""
 	}
 
-	var doc string
 	if decl.Doc != nil {
 		doc = decl.Doc.List[0].Text
 	}

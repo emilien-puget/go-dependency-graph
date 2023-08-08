@@ -9,8 +9,8 @@ import (
 )
 
 // ExtractTypes extracts types information from a package.
-func ExtractTypes(pkg *packages.Package) map[string]*StructDecl {
-	classes := make(map[string]*StructDecl)
+func ExtractTypes(pkg *packages.Package) map[string]*structDecl {
+	classes := make(map[string]*structDecl)
 
 	// Iterate through all types in the package.
 	for _, typ := range pkg.TypesInfo.Defs {
@@ -20,7 +20,7 @@ func ExtractTypes(pkg *packages.Package) map[string]*StructDecl {
 	return classes
 }
 
-func readTypeObject(typ types.Object, classes map[string]*StructDecl) {
+func readTypeObject(typ types.Object, classes map[string]*structDecl) {
 	if typ == nil {
 		return
 	}
@@ -34,7 +34,7 @@ func readTypeObject(typ types.Object, classes map[string]*StructDecl) {
 		return
 	}
 
-	class := &StructDecl{}
+	class := &structDecl{}
 	class.fields = make(map[string]field)
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)

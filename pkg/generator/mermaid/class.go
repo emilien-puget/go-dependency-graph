@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	mymap "github.com/emilien-puget/go-dependency-graph/pkg/map"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
@@ -23,8 +24,8 @@ func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	var classBuf bytes.Buffer
 	var relationBuf bytes.Buffer
 
-	for _, k := range orderedKeys(s.Packages) {
-		err := handlePackages(&classBuf, &relationBuf, k, s.Packages[k])
+	for _, k := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
+		err := handlePackages(&classBuf, &relationBuf, k, s.Graph.NodesByPackage[k], s.Graph)
 		if err != nil {
 			return err
 		}
@@ -44,15 +45,14 @@ func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	return nil
 }
 
-func handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, services parse.Dependencies) error {
+func handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, services []*parse.Node, graph *parse.Graph) error {
 	_, err := fmt.Fprintf(classBuf, "\nnamespace %s {\n", packageName)
 	if err != nil {
 		return err
 	}
 
-	for _, serviceName := range orderedKeys(services) {
-		service := services[serviceName]
-		err := handleService(classBuf, relationBuf, packageName, serviceName, &service)
+	for i := range services {
+		err := handleService(classBuf, relationBuf, packageName, services[i].StructName, services[i], graph)
 		if err != nil {
 			return err
 		}
@@ -61,7 +61,7 @@ func handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, ser
 	return nil
 }
 
-func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName string, service *parse.Dependency) error {
+func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName string, service *parse.Node, graph *parse.Graph) error {
 	serviceFqdn := packageName + packageSeparator + serviceName
 
 	_, err := fmt.Fprintf(classBuf, "class `%s` {\n", serviceFqdn)
@@ -74,8 +74,8 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 	}
 	classBuf.WriteString("}\n\n")
 
-	for _, d := range orderedKeys(service.Deps) {
-		err := handleDeps(service.Deps[d], relationBuf, serviceFqdn)
+	for _, d := range graph.GetAdjacenciesSortedByName(service) {
+		err := handleDeps(d, relationBuf, serviceFqdn)
 		if err != nil {
 			return err
 		}
@@ -83,37 +83,24 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 	return nil
 }
 
-func handleDeps(deps []parse.Dep, relationBuf *bytes.Buffer, serviceFqdn string) error {
-	sort.SliceStable(deps, func(i, j int) bool {
-		return deps[i].PackageName+deps[i].DependencyName < deps[j].PackageName+deps[j].DependencyName
-	})
-	for _, d := range deps {
-		s := d.PackageName + packageSeparator + d.DependencyName
-		if len(d.Funcs) != 0 {
-			sort.Slice(d.Funcs, func(i, j int) bool {
-				return d.Funcs[i] < d.Funcs[j]
-			})
-			for _, fn := range d.Funcs {
-				_, err := fmt.Fprintf(relationBuf, "`%s` ..> `%s`: %s\n", serviceFqdn, s, fn)
-				if err != nil {
-					return err
-				}
-			}
-		} else {
-			_, err := fmt.Fprintf(relationBuf, "`%s` ..> `%s`\n", serviceFqdn, s)
+func handleDeps(deps *parse.Adj, relationBuf *bytes.Buffer, serviceFqdn string) error {
+	s := deps.Node.PackageName + packageSeparator + deps.Node.StructName
+	if len(deps.Func) != 0 {
+		sort.Slice(deps.Func, func(i, j int) bool {
+			return deps.Func[i] < deps.Func[j]
+		})
+		for _, fn := range deps.Func {
+			_, err := fmt.Fprintf(relationBuf, "`%s` ..> `%s`: %s\n", serviceFqdn, s, fn)
 			if err != nil {
 				return err
 			}
 		}
+	} else {
+		_, err := fmt.Fprintf(relationBuf, "`%s` ..> `%s`\n", serviceFqdn, s)
+		if err != nil {
+			return err
+		}
 	}
-	return nil
-}
 
-func orderedKeys[v any](tab map[string]v) []string {
-	keys := make([]string, 0, len(tab))
-	for k := range tab {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
+	return nil
 }

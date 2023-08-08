@@ -19,18 +19,20 @@ func TestParse_ext_dep(t *testing.T) {
 		External:    false,
 	}
 	graph.AddNode(extA)
+	node := &Node{
+		Name:        "net/http.Client",
+		PackageName: "net/http",
+		StructName:  "Client",
+		Methods:     nil,
+		Doc:         "",
+		External:    true,
+	}
+	graph.AddNode(node)
 	graph.AddEdge(extA, &Adj{
-		Node: &Node{
-			Name:        "net/http.Client",
-			PackageName: "net/http",
-			StructName:  "Client",
-			Methods:     nil,
-			Doc:         "",
-			External:    true,
-		},
+		Node: node,
 		Func: nil,
 	})
-	assert.Equal(t, graph.NodesByPackage, parse.Graph.NodesByPackage)
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 }
 
 func TestParse_fn(t *testing.T) {
@@ -78,17 +80,23 @@ func TestParse_fn(t *testing.T) {
 		PackageName: "pa",
 		StructName:  "A",
 		Methods: []string{
-			"FuncA(toto string) (titi int, err error)",
+			"FuncFoo(foo string) (bar int, err error)",
 		},
 		Doc: "A pa struct.",
 	}
 	graph.AddNode(paA)
-	graph.AddEdge(fnA, &Adj{Node: fnB})
-	graph.AddEdge(fnA, &Adj{Node: fnD})
+	graph.AddEdge(fnA, &Adj{Node: fnB, Func: []string{"FuncA", "FuncB"}})
+	graph.AddEdge(fnA, &Adj{Node: fnD, Func: []string{"FuncA"}})
 	graph.AddEdge(fnB, &Adj{Node: fnC, Func: []string{"FuncA"}})
-	graph.AddEdge(fnD, &Adj{Node: fnA})
+	graph.AddEdge(fnD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	assert.Equal(t, graph.NodesByPackage, parse.Graph.NodesByPackage)
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.A")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.B")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.C")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.D")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
 func TestParse_inter(t *testing.T) {
@@ -136,17 +144,23 @@ func TestParse_inter(t *testing.T) {
 		PackageName: "pa",
 		StructName:  "A",
 		Methods: []string{
-			"FuncA()",
+			"FuncFoo(foo string) (bar int, err error)",
 		},
 		Doc: "A pa struct.",
 	}
 	graph.AddNode(paA)
-	graph.AddEdge(interA, &Adj{Node: interB})
-	graph.AddEdge(interA, &Adj{Node: interD})
-	graph.AddEdge(interB, &Adj{Node: interC})
-	graph.AddEdge(interD, &Adj{Node: interA})
+	graph.AddEdge(interA, &Adj{Node: interB, Func: []string{"FuncA", "FuncB"}})
+	graph.AddEdge(interA, &Adj{Node: interD, Func: []string{"FuncA"}})
+	graph.AddEdge(interB, &Adj{Node: interC, Func: []string{"FuncA"}})
+	graph.AddEdge(interD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	assert.Equal(t, graph.NodesByPackage, parse.Graph.NodesByPackage)
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
 func TestParse_wire_sample(t *testing.T) {
@@ -175,9 +189,9 @@ func TestParse_wire_sample(t *testing.T) {
 		Doc: "Event is a gathering with greeters.",
 	}
 	graph.AddNode(mainEvent)
-	graph.AddEdge(mainGreeter, &Adj{Node: mainEvent})
+	graph.AddEdge(mainEvent, &Adj{Node: mainGreeter})
 
-	assert.Equal(t, graph.NodesByPackage, parse.Graph.NodesByPackage)
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 }
 
 func TestParse_package_name_mismatch(t *testing.T) {
@@ -198,7 +212,8 @@ func TestParse_package_name_mismatch(t *testing.T) {
 		StructName:  "Encoder",
 		External:    true,
 	}
+	graph.AddNode(mainEvent)
 	graph.AddEdge(mainGreeter, &Adj{Node: mainEvent})
 
-	assert.Equal(t, graph.NodesByPackage, parse.Graph.NodesByPackage)
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 }

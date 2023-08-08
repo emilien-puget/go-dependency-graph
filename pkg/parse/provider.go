@@ -5,7 +5,16 @@ import (
 	"go/types"
 )
 
-func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]Import, typesInfo *types.Info, t map[string]map[string]*StructDecl) (name string, deps map[string][]Dep, decl *StructDecl) {
+// dep represent one dependency injected.
+type dep struct {
+	PackageName    string
+	DependencyName string
+	VarName        string
+	Funcs          []string
+	External       bool
+}
+
+func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*structDecl) (name string, deps map[string][]dep, decl *structDecl) {
 	if funcdecl.Name.Name[:3] != "New" {
 		return "", nil, nil
 	}
@@ -41,8 +50,8 @@ func searchDependencyName(funcdecl *ast.FuncDecl) string {
 }
 
 // searchDependencies returns the dependency found in the provider type declaration.
-func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]Import, info *types.Info) (deps map[string][]Dep) {
-	deps = map[string][]Dep{}
+func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]importDecl, info *types.Info) (deps map[string][]dep) {
+	deps = map[string][]dep{}
 	for _, param := range funcdecl.Type.Params.List {
 		if !checkDepsMethods(info.TypeOf(param.Type)) { // ignore dependencies without methods
 			continue
@@ -63,7 +72,7 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 		if external {
 			packageName = imp.Path
 		}
-		deps[varName] = append(deps[varName], Dep{
+		deps[varName] = append(deps[varName], dep{
 			VarName:        varName,
 			PackageName:    packageName,
 			DependencyName: serviceName,
@@ -110,7 +119,7 @@ func getDepID(dep ast.Expr) (packageName, serviceName string) {
 
 // searchDependenciesAssignment parse the provider function to search for a return.
 // this return is then parsed to look for injected functions to complete the deps found in the previous step.
-func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep, s *StructDecl) {
+func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]dep, s *structDecl) {
 	if funcdecl.Body != nil {
 		for _, stmt := range funcdecl.Body.List {
 			retStmt, ok := stmt.(*ast.ReturnStmt)
@@ -136,7 +145,7 @@ func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]Dep,
 	}
 }
 
-func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]Dep, s *StructDecl) {
+func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]dep, s *structDecl) {
 	switch value := kvExpr.Value.(type) {
 	case *ast.SelectorExpr:
 		x, ok := value.X.(*ast.Ident)

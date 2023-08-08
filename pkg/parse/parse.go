@@ -12,35 +12,7 @@ import (
 // AstSchema is a simpler presentation of the ast of a project.
 type AstSchema struct {
 	ModulePath string
-	Packages   map[string]Dependencies
 	Graph      *Graph
-}
-
-// Dependencies contains all the dependencies of a package.
-type Dependencies map[string]Dependency
-
-// Dependency represent a type that has been identified as a dependency.
-type Dependency struct {
-	Methods      []string
-	Comment      string
-	Imports      []Import
-	Deps         map[string][]Dep
-	ExternalDeps map[string][]Dep
-}
-
-// Import represent an imported package.
-type Import struct {
-	Path     string
-	External bool
-}
-
-// Dep represent one dependency injected.
-type Dep struct {
-	PackageName    string
-	DependencyName string
-	VarName        string
-	Funcs          []string
-	External       bool
 }
 
 // Parse parses the project located under pathDir and returns an AstSchema.
@@ -51,7 +23,6 @@ func Parse(pathDir string) (AstSchema, error) {
 	}
 	as := AstSchema{
 		ModulePath: modulePath,
-		Packages:   map[string]Dependencies{},
 		Graph:      NewGraph(),
 	}
 
@@ -72,7 +43,7 @@ func Parse(pathDir string) (AstSchema, error) {
 	if err != nil {
 		return AstSchema{}, err
 	}
-	types := make(map[string]map[string]*StructDecl)
+	types := make(map[string]map[string]*structDecl)
 	pkgs, err := packages.Load(cfg, dirs...)
 	for i := range pkgs {
 		pkgType := ExtractTypes(pkgs[i])
@@ -91,13 +62,13 @@ func Parse(pathDir string) (AstSchema, error) {
 	return as, nil
 }
 
-func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*StructDecl) {
+func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*structDecl) {
 	for _, f := range p.Syntax {
 		parseFile(f, p, as.ModulePath, types, as.Graph)
 	}
 }
 
-func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*StructDecl, graph *Graph) {
+func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*structDecl, graph *Graph) {
 	packageName := f.Name.Name
 
 	structDoc := map[string]string{}
@@ -131,33 +102,18 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 
 		for s := range deps {
 			for i2 := range deps[s] {
+				adjNode := &Node{
+					Name:        deps[s][i2].PackageName + "." + deps[s][i2].DependencyName,
+					PackageName: deps[s][i2].PackageName,
+					StructName:  deps[s][i2].DependencyName,
+					External:    deps[s][i2].External,
+				}
+				graph.AddNode(adjNode)
 				graph.AddEdge(newNode, &Adj{
-					Node: &Node{
-						Name:        deps[s][i2].PackageName + "." + deps[s][i2].DependencyName,
-						PackageName: deps[s][i2].PackageName,
-						StructName:  deps[s][i2].DependencyName,
-						External:    deps[s][i2].External,
-					},
+					Node: adjNode,
 					Func: deps[s][i2].Funcs,
 				})
 			}
 		}
 	}
-	return
-}
-
-func parseImports(f *ast.File, modulePath string, imp map[string]*packages.Package) map[string]Import {
-	imports := make(map[string]Import, 0)
-	for _, im := range f.Imports {
-		p := strings.Trim(im.Path.Value, "\"")
-		importName := imp[p].Name
-		if im.Name != nil {
-			importName = im.Name.Name
-		}
-		imports[importName] = Import{
-			Path:     p,
-			External: !strings.Contains(p, modulePath),
-		}
-	}
-	return imports
 }

@@ -7,6 +7,6 @@ func NewA() *A {
 	return &A{}
 }
 
-func (a A) FuncA(toto string) (titi int, err error) {
-	return 0, err
+func (a A) FuncFoo(foo string) (bar int, err error) {
+	return bar, err
 }

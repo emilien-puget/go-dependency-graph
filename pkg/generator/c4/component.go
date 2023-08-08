@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	mymap "github.com/emilien-puget/go-dependency-graph/pkg/map"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
@@ -27,8 +28,9 @@ func GenerateComponentFromSchema(writer *bufio.Writer, s parse.AstSchema) error 
 
 	relations := ""
 	externalRelations := make(map[string]string)
-	for packageName, services := range s.Graph.NodesByPackage {
-		rel, err := handlePackages(writer, packageName, services, externalRelations, s.Graph)
+
+	for _, packageName := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
+		rel, err := handlePackages(writer, packageName, s.Graph.NodesByPackage[packageName], externalRelations, s.Graph)
 		if err != nil {
 			return err
 		}
