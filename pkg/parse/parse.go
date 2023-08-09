@@ -32,6 +32,9 @@ func Parse(pathDir string) (AstSchema, error) {
 		if err != nil {
 			return err
 		}
+		if strings.Contains(p, pathDir+"/vendor") {
+			return nil
+		}
 		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
 			dir, _ := filepath.Split(p)
 			dirs = append(dirs, dir)

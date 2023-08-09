@@ -15,7 +15,7 @@ type dep struct {
 }
 
 func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*structDecl) (name string, deps map[string][]dep, decl *structDecl) {
-	if funcdecl.Name.Name[:3] != "New" {
+	if len(funcdecl.Name.Name) < 3 || funcdecl.Name.Name[:3] != "New" {
 		return "", nil, nil
 	}
 	name = searchDependencyName(funcdecl)
