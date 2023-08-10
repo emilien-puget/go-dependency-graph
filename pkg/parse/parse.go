@@ -27,22 +27,7 @@ func Parse(pathDir string) (AstSchema, error) {
 	}
 
 	cfg := &packages.Config{Dir: pathDir, Mode: packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Tests: false}
-	var dirs []string
-	err = filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if strings.Contains(p, pathDir+"/vendor") {
-			return nil
-		}
-		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
-			dir, _ := filepath.Split(p)
-			dirs = append(dirs, dir)
-			return nil
-		}
-
-		return nil
-	})
+	dirs, err := getDirsToParse(pathDir)
 	if err != nil {
 		return AstSchema{}, err
 	}
@@ -63,6 +48,26 @@ func Parse(pathDir string) (AstSchema, error) {
 	}
 
 	return as, nil
+}
+
+func getDirsToParse(pathDir string) ([]string, error) {
+	var dirs []string
+	err := filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.Contains(p, pathDir+"/vendor") {
+			return nil
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
+			dir, _ := filepath.Split(p)
+			dirs = append(dirs, dir)
+			return nil
+		}
+
+		return nil
+	})
+	return dirs, err
 }
 
 func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*structDecl) {
