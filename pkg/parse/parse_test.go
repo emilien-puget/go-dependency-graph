@@ -99,6 +99,70 @@ func TestParse_fn(t *testing.T) {
 	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
+func TestParse_named_inter(t *testing.T) {
+	t.Parallel()
+	parse, err := Parse("testdata/named_inter")
+	assert.NoError(t, err)
+
+	graph := NewGraph()
+	interA := &Node{
+		Name:        "inter.A",
+		PackageName: "inter",
+		StructName:  "A",
+	}
+	graph.AddNode(interA)
+	interB := &Node{
+		Name:        "inter.B",
+		PackageName: "inter",
+		StructName:  "B",
+		Methods: []string{
+			"FuncA()",
+			"FuncB()",
+		},
+	}
+	graph.AddNode(interB)
+	interC := &Node{
+		Name:        "inter.C",
+		PackageName: "inter",
+		StructName:  "C",
+		Methods: []string{
+			"FuncA()",
+		},
+	}
+	graph.AddNode(interC)
+	interD := &Node{
+		Name:        "inter.D",
+		PackageName: "inter",
+		StructName:  "D",
+		Methods: []string{
+			"FuncA()",
+		},
+	}
+	graph.AddNode(interD)
+	paA := &Node{
+		Name:        "pa.A",
+		PackageName: "pa",
+		StructName:  "A",
+		Methods: []string{
+			"FuncFoo(foo string) (bar int, err error)",
+		},
+		Doc: "A pa struct.",
+	}
+	graph.AddNode(paA)
+	graph.AddEdge(interA, &Adj{Node: interB, Func: []string{"FuncA", "FuncB"}})
+	graph.AddEdge(interA, &Adj{Node: interD, Func: []string{"FuncA"}})
+	graph.AddEdge(interB, &Adj{Node: interC, Func: []string{"FuncA"}})
+	graph.AddEdge(interD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
+
+	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
+	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+}
+
 func TestParse_inter(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/inter")

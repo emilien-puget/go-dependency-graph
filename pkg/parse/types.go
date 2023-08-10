@@ -33,6 +33,7 @@ func readTypeObject(typ types.Object, classes map[string]*structDecl) {
 	if !ok {
 		return
 	}
+	name := tp.Obj().Name()
 
 	class := &structDecl{}
 	class.fields = make(map[string]field)
@@ -46,14 +47,13 @@ func readTypeObject(typ types.Object, classes map[string]*structDecl) {
 				fn:   p.String(),
 			}
 		case *types.Interface:
-			var methods []string
-			for i := 0; i < p.NumMethods(); i++ {
-				methods = append(methods, p.Method(i).Name())
+			readInterface(p, class, f)
+		case *types.Named:
+			ni, ok := p.Underlying().(*types.Interface)
+			if !ok {
+				continue
 			}
-			class.fields[f.Name()] = field{
-				kind:    fieldKindInterface,
-				methods: methods,
-			}
+			readInterface(ni, class, f)
 		}
 	}
 
@@ -62,7 +62,18 @@ func readTypeObject(typ types.Object, classes map[string]*structDecl) {
 		class.methods = append(class.methods, getFuncAsString(tp.Method(i)))
 	}
 
-	classes[tp.Obj().Name()] = class
+	classes[name] = class
+}
+
+func readInterface(p *types.Interface, class *structDecl, f *types.Var) {
+	var methods []string
+	for i := 0; i < p.NumMethods(); i++ {
+		methods = append(methods, p.Method(i).Name())
+	}
+	class.fields[f.Name()] = field{
+		kind:    fieldKindInterface,
+		methods: methods,
+	}
 }
 
 func getFuncAsString(method *types.Func) string {
