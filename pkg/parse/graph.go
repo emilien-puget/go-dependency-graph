@@ -4,7 +4,7 @@ import "sort"
 
 // Node represents a node of the dependency graph.
 type Node struct {
-	Name         string // The name of the struct
+	Name         string // The fully qualified name of the struct, PackageName.StructName
 	PackageName  string
 	StructName   string
 	Methods      []string

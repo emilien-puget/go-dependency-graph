@@ -28,6 +28,13 @@ func TestGraph(t *testing.T) {
 		assert.Equal(t, expectedOrder, actualOrder)
 	})
 
+	t.Run("GetAdjacency", func(t *testing.T) {
+		expectedAdjacency := []*Adj{{Node: nodeC}}
+		actualAdjacency := graph.GetAdjacency(nodeB)
+
+		assert.Equal(t, expectedAdjacency, actualAdjacency)
+	})
+
 	t.Run("TestGetLeafNodes", func(t *testing.T) {
 		expectedLeafNodes := []*Node{nodeA}
 		actualLeafNodes := graph.GetLeafNodes()
