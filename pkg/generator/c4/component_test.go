@@ -71,5 +71,29 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 	buff.Flush()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml\n\ntitle testdata/fn\nAddElementTag(\"external\", $bgColor=\"#8CDE42FF\")\n\nContainer_Boundary(fn, \"fn\") {\nComponent(fn.A, \"fn.A\", \"\", \"\")\nComponent(fn.B, \"fn.B\", \"\", \"\")\nComponent(fn.C, \"fn.C\", \"\", \"\")\nComponent(fn.D, \"fn.D\", \"\", \"\")\n\n}\n\n\nContainer_Boundary(pa, \"pa\") {\nComponent(pa.A, \"pa.A\", \"\", \"A pa struct.\")\n\n}\nRel(fn.A, \"fn.B\", \"FuncA\")\nRel(fn.A, \"fn.B\", \"FuncB\")\nRel(fn.A, \"fn.D\", \"FuncA\")\nRel(fn.B, \"fn.C\", \"FuncA\")\nRel(fn.D, \"pa.A\", \"FuncFoo\")\n\n@enduml", file.String())
+	assert.Equal(t, `@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title testdata/fn
+
+Container_Boundary(fn, "fn") {
+Component(fn_A, "fn.A", "", "")
+Component(fn_B, "fn.B", "", "")
+Component(fn_C, "fn.C", "", "")
+Component(fn_D, "fn.D", "", "")
+
+}
+
+
+Container_Boundary(pa, "pa") {
+Component(pa_A, "pa.A", "", "A pa struct.")
+
+}
+Rel(fn_A, "fn_B", "FuncA")
+Rel(fn_A, "fn_B", "FuncB")
+Rel(fn_A, "fn_D", "FuncA")
+Rel(fn_B, "fn_C", "FuncA")
+Rel(fn_D, "pa_A", "FuncFoo")
+
+@enduml`, file.String())
 }
