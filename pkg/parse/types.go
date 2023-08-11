@@ -41,15 +41,15 @@ func readTypeObject(typ types.Object, classes map[string]*structDecl) {
 		f := s.Field(i)
 
 		switch p := f.Type().(type) {
-		case *types.Signature:
+		case *types.Signature: // struct field is a func.
 			class.fields[f.Name()] = field{
 				kind: fieldKindFunc,
 				fn:   p.String(),
 			}
-		case *types.Interface:
+		case *types.Interface: // struct field is an anonymous interface.
 			readInterface(p, class, f)
-		case *types.Named:
-			ni, ok := p.Underlying().(*types.Interface)
+		case *types.Named: // struct field is a named type
+			ni, ok := p.Underlying().(*types.Interface) // the named type is an interface
 			if !ok {
 				continue
 			}
