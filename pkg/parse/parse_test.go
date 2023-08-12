@@ -335,6 +335,34 @@ func TestParse_inter(t *testing.T) {
 	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
+func TestParse_wire_sample(t *testing.T) {
+	t.Parallel()
+
+	parse, err := Parse("testdata/wire_sample")
+	assert.NoError(t, err)
+
+	graph := NewGraph()
+	mainGreeter := &Node{
+		Name:        "main.Greeter",
+		PackageName: "main",
+		StructName:  "Greeter",
+		Doc:         "Greeter is the type charged with greeting guests.",
+	}
+	graph.AddNode(mainGreeter)
+	mainEvent := &Node{
+		Name:        "main.Event",
+		PackageName: "main",
+		StructName:  "Event",
+		Doc:         "Event is a gathering with greeters.",
+	}
+	graph.AddNode(mainEvent)
+	graph.AddEdge(mainEvent, &Adj{Node: mainGreeter})
+
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("main.Greeter")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("main.Greeter")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("main.Event")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("main.Event")))
+}
+
 func TestParse_package_name_mismatch(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/package_name_mismatch")
