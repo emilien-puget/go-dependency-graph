@@ -3,6 +3,8 @@ package parse
 import (
 	"go/ast"
 	"go/types"
+
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
 )
 
 // dep represent one dependency injected.
@@ -14,7 +16,7 @@ type dep struct {
 	External       bool
 }
 
-func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*structDecl) (name string, deps map[string][]dep, decl *structDecl) {
+func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*struct_decl.Decl) (name string, deps map[string][]dep, decl *struct_decl.Decl) {
 	if len(funcdecl.Name.Name) < 3 || funcdecl.Name.Name[:3] != "New" {
 		return "", nil, nil
 	}
@@ -119,7 +121,7 @@ func getDepID(dep ast.Expr) (packageName, serviceName string) {
 
 // searchDependenciesAssignment parse the provider function to search for a return.
 // this return is then parsed to look for injected functions to complete the deps found in the previous step.
-func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]dep, s *structDecl) {
+func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]dep, s *struct_decl.Decl) {
 	if funcdecl.Body != nil {
 		for _, stmt := range funcdecl.Body.List {
 			retStmt, ok := stmt.(*ast.ReturnStmt)
@@ -145,7 +147,7 @@ func searchDependenciesAssignment(funcdecl *ast.FuncDecl, deps map[string][]dep,
 	}
 }
 
-func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]dep, s *structDecl) {
+func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]dep, s *struct_decl.Decl) {
 	switch value := kvExpr.Value.(type) {
 	case *ast.SelectorExpr:
 		x, ok := value.X.(*ast.Ident)
@@ -160,7 +162,7 @@ func setDepsFunc(kvExpr *ast.KeyValueExpr, deps map[string][]dep, s *structDecl)
 	case *ast.Ident:
 		if _, ok := deps[value.Name]; ok {
 			for i := range deps[value.Name] {
-				deps[value.Name][i].Funcs = s.fields[kvExpr.Key.(*ast.Ident).Name].methods
+				deps[value.Name][i].Funcs = s.Fields[kvExpr.Key.(*ast.Ident).Name].Methods
 			}
 		}
 	}

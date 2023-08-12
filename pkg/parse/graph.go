@@ -1,21 +1,35 @@
 package parse
 
-import "sort"
+import (
+	"go/types"
+	"sort"
+
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
+	"golang.org/x/tools/go/packages"
+)
 
 // Node represents a node of the dependency graph.
 type Node struct {
-	Name         string // The fully qualified name of the struct, PackageName.StructName
-	PackageName  string
-	StructName   string
-	Methods      []string
-	Doc          string
-	External     bool
-	InboundEdges []*Node
+	Name            string // The fully qualified name of the struct, PackageName.StructName
+	PackageName     string
+	StructName      string
+	Methods         []struct_decl.Method
+	Doc             string
+	External        bool
+	InboundEdges    []*Node
+	ActualNamedType *types.Named
+	P               *packages.Package
 }
 
 func (n *Node) MergeAdditionalFields(other *Node) {
 	if len(other.Methods) > 0 {
 		n.Methods = other.Methods
+	}
+	if n.ActualNamedType == nil && other.ActualNamedType != nil {
+		n.ActualNamedType = other.ActualNamedType
+	}
+	if n.P == nil && other.P != nil {
+		n.P = other.P
 	}
 }
 

@@ -1,10 +1,37 @@
 package parse
 
 import (
+	"fmt"
+	"go/token"
+	"go/types"
 	"testing"
 
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestParse_error(t *testing.T) {
+	tests := map[string]struct {
+		pathDir string
+		wantErr assert.ErrorAssertionFunc
+	}{
+		"no_go_mod": {
+			pathDir: "testdata/no_go_mod",
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorIs(t, err, ErrGoModNotFound)
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := Parse(tt.pathDir)
+			if !tt.wantErr(t, err, fmt.Sprintf("Parse(%v)", tt.pathDir)) {
+				return
+			}
+		})
+	}
+}
 
 func TestParse_ext_dep(t *testing.T) {
 	t.Parallel()
@@ -32,7 +59,13 @@ func TestParse_ext_dep(t *testing.T) {
 		Node: node,
 		Func: nil,
 	})
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+
+	require.NotNil(t, parse.Graph.GetNodeByName("ext_dep.A").ActualNamedType)
+	require.NotNil(t, parse.Graph.GetNodeByName("ext_dep.A").P)
+
+	require.Nil(t, parse.Graph.GetNodeByName("net/http.Client").ActualNamedType)
+	require.Nil(t, parse.Graph.GetNodeByName("net/http.Client").P)
 }
 
 func TestParse_fn(t *testing.T) {
@@ -51,9 +84,13 @@ func TestParse_fn(t *testing.T) {
 		Name:        "fn.B",
 		PackageName: "fn",
 		StructName:  "B",
-		Methods: []string{
-			"FuncA()",
-			"FuncB()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncB", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnB)
@@ -61,8 +98,10 @@ func TestParse_fn(t *testing.T) {
 		Name:        "fn.C",
 		PackageName: "fn",
 		StructName:  "C",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnC)
@@ -70,8 +109,10 @@ func TestParse_fn(t *testing.T) {
 		Name:        "fn.D",
 		PackageName: "fn",
 		StructName:  "D",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnD)
@@ -79,8 +120,25 @@ func TestParse_fn(t *testing.T) {
 		Name:        "pa.A",
 		PackageName: "pa",
 		StructName:  "A",
-		Methods: []string{
-			"FuncFoo(foo string) (bar int, err error)",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(
+					token.NoPos,
+					nil,
+					"FuncFoo",
+					types.NewSignatureType(
+						nil,
+						nil,
+						nil,
+						types.NewTuple(types.NewParam(token.NoPos, nil, "foo", types.Typ[types.String])),
+						types.NewTuple(
+							types.NewParam(token.NoPos, nil, "bar", types.Typ[types.Int]),
+							types.NewParam(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+						),
+						false,
+					),
+				),
+			},
 		},
 		Doc: "A pa struct.",
 	}
@@ -90,13 +148,13 @@ func TestParse_fn(t *testing.T) {
 	graph.AddEdge(fnB, &Adj{Node: fnC, Func: []string{"FuncA"}})
 	graph.AddEdge(fnD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.A")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.B")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.C")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.D")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
 func TestParse_named_inter(t *testing.T) {
@@ -115,9 +173,12 @@ func TestParse_named_inter(t *testing.T) {
 		Name:        "inter.B",
 		PackageName: "inter",
 		StructName:  "B",
-		Methods: []string{
-			"FuncA()",
-			"FuncB()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			}, {
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncB", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interB)
@@ -125,8 +186,10 @@ func TestParse_named_inter(t *testing.T) {
 		Name:        "inter.C",
 		PackageName: "inter",
 		StructName:  "C",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interC)
@@ -134,8 +197,10 @@ func TestParse_named_inter(t *testing.T) {
 		Name:        "inter.D",
 		PackageName: "inter",
 		StructName:  "D",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interD)
@@ -143,8 +208,25 @@ func TestParse_named_inter(t *testing.T) {
 		Name:        "pa.A",
 		PackageName: "pa",
 		StructName:  "A",
-		Methods: []string{
-			"FuncFoo(foo string) (bar int, err error)",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(
+					token.NoPos,
+					nil,
+					"FuncFoo",
+					types.NewSignatureType(
+						nil,
+						nil,
+						nil,
+						types.NewTuple(types.NewParam(token.NoPos, nil, "foo", types.Typ[types.String])),
+						types.NewTuple(
+							types.NewParam(token.NoPos, nil, "bar", types.Typ[types.Int]),
+							types.NewParam(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+						),
+						false,
+					),
+				),
+			},
 		},
 		Doc: "A pa struct.",
 	}
@@ -154,13 +236,13 @@ func TestParse_named_inter(t *testing.T) {
 	graph.AddEdge(interB, &Adj{Node: interC, Func: []string{"FuncA"}})
 	graph.AddEdge(interD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
 func TestParse_inter(t *testing.T) {
@@ -179,9 +261,13 @@ func TestParse_inter(t *testing.T) {
 		Name:        "inter.B",
 		PackageName: "inter",
 		StructName:  "B",
-		Methods: []string{
-			"FuncA()",
-			"FuncB()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncB", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interB)
@@ -189,8 +275,10 @@ func TestParse_inter(t *testing.T) {
 		Name:        "inter.C",
 		PackageName: "inter",
 		StructName:  "C",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interC)
@@ -198,8 +286,10 @@ func TestParse_inter(t *testing.T) {
 		Name:        "inter.D",
 		PackageName: "inter",
 		StructName:  "D",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interD)
@@ -207,8 +297,25 @@ func TestParse_inter(t *testing.T) {
 		Name:        "pa.A",
 		PackageName: "pa",
 		StructName:  "A",
-		Methods: []string{
-			"FuncFoo(foo string) (bar int, err error)",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(
+					token.NoPos,
+					nil,
+					"FuncFoo",
+					types.NewSignatureType(
+						nil,
+						nil,
+						nil,
+						types.NewTuple(types.NewParam(token.NoPos, nil, "foo", types.Typ[types.String])),
+						types.NewTuple(
+							types.NewParam(token.NoPos, nil, "bar", types.Typ[types.Int]),
+							types.NewParam(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+						),
+						false,
+					),
+				),
+			},
 		},
 		Doc: "A pa struct.",
 	}
@@ -218,44 +325,14 @@ func TestParse_inter(t *testing.T) {
 	graph.AddEdge(interB, &Adj{Node: interC, Func: []string{"FuncA"}})
 	graph.AddEdge(interD, &Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
-	assert.Equal(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
-}
-
-func TestParse_wire_sample(t *testing.T) {
-	t.Parallel()
-	parse, err := Parse("testdata/wire_sample")
-	assert.NoError(t, err)
-
-	graph := NewGraph()
-	mainGreeter := &Node{
-		Name:        "main.Greeter",
-		PackageName: "main",
-		StructName:  "Greeter",
-		Methods: []string{
-			"Greet() ( testdata/wire_sample.Message)",
-		},
-		Doc: "Greeter is the type charged with greeting guests.",
-	}
-	graph.AddNode(mainGreeter)
-	mainEvent := &Node{
-		Name:        "main.Event",
-		PackageName: "main",
-		StructName:  "Event",
-		Methods: []string{
-			"Start()",
-		},
-		Doc: "Event is a gathering with greeters.",
-	}
-	graph.AddNode(mainEvent)
-	graph.AddEdge(mainEvent, &Adj{Node: mainGreeter})
-
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
 }
 
 func TestParse_package_name_mismatch(t *testing.T) {
@@ -277,7 +354,34 @@ func TestParse_package_name_mismatch(t *testing.T) {
 		External:    true,
 	}
 	graph.AddNode(mainEvent)
-	graph.AddEdge(mainGreeter, &Adj{Node: mainEvent})
+	graph.AddEdge(mainGreeter, &Adj{Node: mainEvent, Func: []string{"Encode"}})
 
-	assert.Equal(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("package_name_mismatch.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("package_name_mismatch.A")))
+}
+
+func assertAdj(t *testing.T, expectedAdj, gotAdj []*Adj) {
+	for i := range expectedAdj {
+		require.Equal(t, expectedAdj[i].Func, gotAdj[i].Func)
+		assertNode(t, expectedAdj[i].Node, gotAdj[i].Node)
+
+	}
+}
+
+func assertNodes(t *testing.T, expectedNodes, gotNodes []*Node) {
+	require.Equal(t, len(expectedNodes), len(gotNodes))
+	for i := range gotNodes {
+		assertNode(t, expectedNodes[i], gotNodes[i])
+	}
+}
+
+func assertNode(t *testing.T, expected, got *Node) {
+	require.Equal(t, expected.Name, got.Name)
+	require.Equal(t, expected.StructName, got.StructName)
+	require.Equal(t, expected.PackageName, got.PackageName)
+	require.Equal(t, expected.Doc, got.Doc)
+
+	for i2 := range expected.Methods {
+		require.Equal(t, expected.Methods[i2].String(), got.Methods[i2].String())
+	}
 }
