@@ -3,9 +3,12 @@ package mermaid
 import (
 	"bufio"
 	"bytes"
+	"go/token"
+	"go/types"
 	"testing"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,9 +27,13 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 		Name:        "fn.B",
 		PackageName: "fn",
 		StructName:  "B",
-		Methods: []string{
-			"FuncA()",
-			"FuncB()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncB", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnB)
@@ -34,8 +41,10 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 		Name:        "fn.C",
 		PackageName: "fn",
 		StructName:  "C",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnC)
@@ -43,8 +52,10 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 		Name:        "fn.D",
 		PackageName: "fn",
 		StructName:  "D",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(fnD)
@@ -52,8 +63,24 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 		Name:        "pa.A",
 		PackageName: "pa",
 		StructName:  "A",
-		Methods: []string{
-			"FuncFoo(foo string) (bar int, err error)",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(
+					token.NoPos,
+					nil,
+					"FuncFoo",
+					types.NewSignatureType(
+						nil,
+						nil,
+						nil,
+						types.NewTuple(types.NewParam(token.NoPos, nil, "foo", types.Typ[types.String])),
+						types.NewTuple(
+							types.NewParam(token.NoPos, nil, "bar", types.Typ[types.Int]),
+							types.NewParam(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+						),
+						false,
+					)),
+			},
 		},
 		Doc: "A pa struct.",
 	}
@@ -122,9 +149,13 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 		Name:        "inter.B",
 		PackageName: "inter",
 		StructName:  "B",
-		Methods: []string{
-			"FuncA()",
-			"FuncB()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncB", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interB)
@@ -132,8 +163,10 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 		Name:        "inter.C",
 		PackageName: "inter",
 		StructName:  "C",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interC)
@@ -141,8 +174,10 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 		Name:        "inter.D",
 		PackageName: "inter",
 		StructName:  "D",
-		Methods: []string{
-			"FuncA()",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(token.NoPos, nil, "FuncA", &types.Signature{}),
+			},
 		},
 	}
 	graph.AddNode(interD)
@@ -150,8 +185,24 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 		Name:        "pa.A",
 		PackageName: "pa",
 		StructName:  "A",
-		Methods: []string{
-			"FuncFoo(foo string) (bar int, err error)",
+		Methods: []struct_decl.Method{
+			{
+				TypFuc: types.NewFunc(
+					token.NoPos,
+					nil,
+					"FuncFoo",
+					types.NewSignatureType(
+						nil,
+						nil,
+						nil,
+						types.NewTuple(types.NewParam(token.NoPos, nil, "foo", types.Typ[types.String])),
+						types.NewTuple(
+							types.NewParam(token.NoPos, nil, "bar", types.Typ[types.Int]),
+							types.NewParam(token.NoPos, nil, "err", types.Universe.Lookup("error").Type()),
+						),
+						false,
+					)),
+			},
 		},
 		Doc: "A pa struct.",
 	}

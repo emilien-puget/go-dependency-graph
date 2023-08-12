@@ -1,11 +1,11 @@
 package parse
 
 import (
+	"fmt"
 	"go/ast"
-	"io/fs"
-	"path/filepath"
-	"strings"
 
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/package_list"
+	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -19,73 +19,44 @@ type AstSchema struct {
 func Parse(pathDir string) (AstSchema, error) {
 	modulePath, err := getModulePath(pathDir)
 	if err != nil {
-		return AstSchema{}, err
+		return AstSchema{}, fmt.Errorf("getModulePath:%w", err)
 	}
 	as := AstSchema{
 		ModulePath: modulePath,
 		Graph:      NewGraph(),
 	}
 
-	cfg := &packages.Config{Dir: pathDir, Mode: packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Tests: false}
-	dirs, err := getDirsToParse(pathDir)
+	pkgs, err := package_list.GetPackagesToParse(pathDir)
 	if err != nil {
-		return AstSchema{}, err
+		return AstSchema{}, fmt.Errorf("package_list.GetPackagesToParse:%w", err)
 	}
-	types := make(map[string]map[string]*structDecl)
-	pkgs, err := packages.Load(cfg, dirs...)
-	for i := range pkgs {
-		pkgType := ExtractTypes(pkgs[i])
-		if err != nil {
-			return AstSchema{}, err
-		}
-		types[pkgs[i].Name] = pkgType
+
+	types := struct_decl.Extract(pkgs)
+	if err != nil {
+		return AstSchema{}, fmt.Errorf("struct_decl.Extract:%w", err)
 	}
-	for i := range pkgs {
-		parsePackage(pkgs[i], &as, types)
-		if err != nil {
-			return AstSchema{}, err
-		}
-	}
+
+	parsePackages(pkgs, &as, types)
 
 	return as, nil
 }
 
-func getDirsToParse(pathDir string) ([]string, error) {
-	var dirs []string
-	err := filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if strings.Contains(p, pathDir+"/vendor") {
-			return nil
-		}
-		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
-			dir, _ := filepath.Split(p)
-			dirs = append(dirs, dir)
-			return nil
-		}
-
-		return nil
-	})
-	return dirs, err
+func parsePackages(pkgs []*packages.Package, schema *AstSchema, types map[string]map[string]*struct_decl.Decl) {
+	for i := range pkgs {
+		parsePackage(pkgs[i], schema, types)
+	}
 }
 
-func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*structDecl) {
+func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*struct_decl.Decl) {
 	for _, f := range p.Syntax {
 		parseFile(f, p, as.ModulePath, types, as.Graph)
 	}
 }
 
-func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*structDecl, graph *Graph) {
+func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*struct_decl.Decl, graph *Graph) {
 	packageName := f.Name.Name
 
-	structDoc := map[string]string{}
-	for _, decl := range f.Decls {
-		if d, ok := decl.(*ast.GenDecl); ok {
-			name, structDecl := searchStructDecl(d)
-			structDoc[packageName+"."+name] = structDecl
-		}
-	}
+	structDoc := struct_decl.GetStructDoc(f, packageName)
 
 	imports := parseImports(f, modulePath, p.Imports)
 	for _, decl := range f.Decls {
@@ -98,10 +69,12 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 			continue
 		}
 		newNode := &Node{
-			Name:        packageName + "." + name,
-			PackageName: packageName,
-			StructName:  name,
-			Methods:     sDecl.methods,
+			Name:            packageName + "." + name,
+			PackageName:     packageName,
+			StructName:      name,
+			Methods:         sDecl.Methods,
+			ActualNamedType: sDecl.ActualNamedType,
+			P:               p,
 		}
 		if len(structDoc[packageName+"."+name]) > 3 {
 			newNode.Doc = structDoc[packageName+"."+name][3:]

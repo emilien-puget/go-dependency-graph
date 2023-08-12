@@ -69,7 +69,7 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 		return err
 	}
 	for _, method := range service.Methods {
-		classBuf.WriteString(method)
+		classBuf.WriteString(method.String())
 		classBuf.WriteString("\n")
 	}
 	classBuf.WriteString("}\n\n")
