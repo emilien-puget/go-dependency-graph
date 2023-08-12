@@ -8,7 +8,7 @@ type D struct {
 
 func NewD(a *pa.A) *D {
 	return &D{
-		PaAFuncA: a.FuncA,
+		PaAFuncA: a.FuncFoo,
 	}
 }
 

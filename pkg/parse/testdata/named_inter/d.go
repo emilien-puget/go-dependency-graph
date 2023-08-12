@@ -1,11 +1,12 @@
 package inter
 
-import "testdata/inter/pa"
+import "testdata/named_inter/pa"
 
+type daI interface {
+	FuncFoo(foo string) (bar int, err error)
+}
 type D struct {
-	a interface {
-		FuncFoo(foo string) (bar int, err error)
-	}
+	a daI
 }
 
 func NewD(a *pa.A) *D {

@@ -8,5 +8,5 @@ func NewA() *A {
 }
 
 func (a A) FuncFoo(foo string) (bar int, err error) {
-	return bar, err
+	return 0, err
 }
