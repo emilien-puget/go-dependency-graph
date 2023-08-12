@@ -8,6 +8,7 @@ import (
 )
 
 func TestExtractExtDep(t *testing.T) {
+	t.Parallel()
 	pkgs, err := package_list.GetPackagesToParse("../testdata/ext_dep")
 	require.NoError(t, err)
 	got := Extract(pkgs)
@@ -22,6 +23,7 @@ func TestExtractExtDep(t *testing.T) {
 }
 
 func TestExtractInter(t *testing.T) {
+	t.Parallel()
 	pkgs, err := package_list.GetPackagesToParse("../testdata/inter")
 	require.NoError(t, err)
 	got := Extract(pkgs)
@@ -62,6 +64,7 @@ func TestExtractInter(t *testing.T) {
 }
 
 func TestExtractNamedInter(t *testing.T) {
+	t.Parallel()
 	pkgs, err := package_list.GetPackagesToParse("../testdata/named_inter")
 	require.NoError(t, err)
 	got := Extract(pkgs)
@@ -102,6 +105,7 @@ func TestExtractNamedInter(t *testing.T) {
 }
 
 func TestExtractFunc(t *testing.T) {
+	t.Parallel()
 	pkgs, err := package_list.GetPackagesToParse("../testdata/fn")
 	require.NoError(t, err)
 	got := Extract(pkgs)

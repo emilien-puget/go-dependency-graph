@@ -56,13 +56,7 @@ func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[strin
 func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*struct_decl.Decl, graph *Graph) {
 	packageName := f.Name.Name
 
-	structDoc := map[string]string{}
-	for _, decl := range f.Decls {
-		if d, ok := decl.(*ast.GenDecl); ok {
-			name, Decl := struct_decl.Search(d)
-			structDoc[packageName+"."+name] = Decl
-		}
-	}
+	structDoc := struct_decl.GetStructDoc(f, packageName)
 
 	imports := parseImports(f, modulePath, p.Imports)
 	for _, decl := range f.Decls {

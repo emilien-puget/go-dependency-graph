@@ -5,7 +5,21 @@ import (
 	"go/token"
 )
 
-func Search(decl *ast.GenDecl) (structName, doc string) {
+func GetStructDoc(f *ast.File, packageName string) map[string]string {
+	structDoc := map[string]string{}
+	for _, decl := range f.Decls {
+		if d, ok := decl.(*ast.GenDecl); ok {
+			name, doc := search(d)
+			if name == "" && doc == "" {
+				continue
+			}
+			structDoc[packageName+"."+name] = doc
+		}
+	}
+	return structDoc
+}
+
+func search(decl *ast.GenDecl) (structName, doc string) {
 	if decl.Tok != token.TYPE {
 		return "", ""
 	}
