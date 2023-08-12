@@ -3,6 +3,7 @@ package package_list
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 
 const (
 	goFileExtension = ".go"
-	vendorDir       = "/vendor"
+	vendorDir       = "vendor"
 )
 
 func GetPackagesToParse(pathDir string) ([]*packages.Package, error) {
@@ -38,7 +39,7 @@ func findGoSourceDirectories(pathDir string) ([]string, error) {
 		if err != nil {
 			return fmt.Errorf("filepath.WalkDir: %w", err)
 		}
-		if strings.Contains(p, vendorDir) {
+		if strings.Contains(p, string(os.PathSeparator)+vendorDir) {
 			return nil
 		}
 		if !d.IsDir() && strings.HasSuffix(d.Name(), goFileExtension) {
