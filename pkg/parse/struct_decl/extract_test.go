@@ -1,6 +1,7 @@
 package struct_decl
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/package_list"
@@ -20,7 +21,7 @@ func TestExtractExtDep(t *testing.T) {
 	require.Contains(t, got["ext_dep"], "A")
 	require.NotNil(t, got["ext_dep"]["A"].ActualNamedType)
 	require.Len(t, got["ext_dep"]["A"].Methods, 0)
-	require.Contains(t, got["ext_dep"]["A"].FilePath, "go-dependency-graph/pkg/parse/testdata/ext_dep/a.go")
+	require.Contains(t, got["ext_dep"]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "ext_dep", "a.go"))
 }
 
 func TestExtractInter(t *testing.T) {
