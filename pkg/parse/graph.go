@@ -19,6 +19,7 @@ type Node struct {
 	InboundEdges    []*Node
 	ActualNamedType *types.Named
 	P               *packages.Package
+	FilePath        string
 }
 
 func (n *Node) MergeAdditionalFields(other *Node) {
@@ -30,6 +31,9 @@ func (n *Node) MergeAdditionalFields(other *Node) {
 	}
 	if n.P == nil && other.P != nil {
 		n.P = other.P
+	}
+	if n.FilePath == "" && other.FilePath != "" {
+		n.FilePath = other.FilePath
 	}
 }
 

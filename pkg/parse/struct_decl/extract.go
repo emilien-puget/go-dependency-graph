@@ -1,6 +1,7 @@
 package struct_decl
 
 import (
+	"go/token"
 	"go/types"
 
 	"golang.org/x/tools/go/packages"
@@ -10,6 +11,7 @@ type Decl struct {
 	Fields          map[string]Field
 	Methods         []Method
 	ActualNamedType *types.Named
+	FilePath        string
 }
 
 const (
@@ -38,13 +40,13 @@ func extractTypes(pkg *packages.Package) map[string]*Decl {
 
 	// Iterate through all types in the package.
 	for _, typ := range pkg.TypesInfo.Defs {
-		readTypeObject(typ, classes)
+		readTypeObject(typ, pkg.Fset, classes)
 	}
 
 	return classes
 }
 
-func readTypeObject(typ types.Object, classes map[string]*Decl) {
+func readTypeObject(typ types.Object, fset *token.FileSet, classes map[string]*Decl) {
 	if typ == nil {
 		return
 	}
@@ -62,6 +64,7 @@ func readTypeObject(typ types.Object, classes map[string]*Decl) {
 	class := &Decl{}
 	class.ActualNamedType = tp
 	class.Fields = make(map[string]Field)
+	class.FilePath = fset.File(typ.Pos()).Name()
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
 

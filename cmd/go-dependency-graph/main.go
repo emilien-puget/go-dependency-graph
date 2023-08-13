@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 
-	"github.com/emilien-puget/go-dependency-graph/pkg/generator/c4"
-	"github.com/emilien-puget/go-dependency-graph/pkg/generator/mermaid"
+	"github.com/emilien-puget/go-dependency-graph/pkg/diagrams"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	writer "github.com/emilien-puget/go-dependency-graph/pkg/writer"
 )
@@ -28,24 +26,16 @@ func main() {
 
 var (
 	errMissingProject   = errors.New("project is required")
-	errUnknownGenerator = errors.New("unknown generator")
+	errMissingGenerator = errors.New("generator is required")
 )
-
-type generateFromSchema func(writer *bufio.Writer, s parse.AstSchema) error
-
-var generators = map[string]generateFromSchema{
-	"c4_plantuml_component": c4.GenerateComponentFromSchema,
-	"mermaid_class":         mermaid.GenerateClassFromSchema,
-}
 
 func run(project, path, generator *string) error {
 	if project == nil || *project == "" {
 		return errMissingProject
 	}
 
-	gen, ok := generators[*generator]
-	if !ok {
-		return errUnknownGenerator
+	if generator == nil || *generator == "" {
+		return errMissingGenerator
 	}
 
 	w, closer, err := writer.GetWriter(path)
@@ -59,7 +49,7 @@ func run(project, path, generator *string) error {
 		return err
 	}
 
-	err = gen(w, as)
+	err = diagrams.Generate(*generator, w, as)
 	if err != nil {
 		return err
 	}

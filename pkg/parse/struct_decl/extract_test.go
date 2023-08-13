@@ -20,6 +20,7 @@ func TestExtractExtDep(t *testing.T) {
 	require.Contains(t, got["ext_dep"], "A")
 	require.NotNil(t, got["ext_dep"]["A"].ActualNamedType)
 	require.Len(t, got["ext_dep"]["A"].Methods, 0)
+	require.Contains(t, got["ext_dep"]["A"].FilePath, "go-dependency-graph/pkg/parse/testdata/ext_dep/a.go")
 }
 
 func TestExtractInter(t *testing.T) {
@@ -37,16 +38,19 @@ func TestExtractInter(t *testing.T) {
 
 	require.NotNil(t, got["pa"]["A"].ActualNamedType)
 	require.Len(t, got["pa"]["A"].Methods, 1)
+	require.Contains(t, got["pa"]["A"].FilePath, "go-dependency-graph/pkg/parse/testdata/inter/pa/a.go")
 	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got["pa"]["A"].Methods[0].String())
 
 	require.Contains(t, got["inter"], "A")
 	require.NotNil(t, got["inter"]["A"].ActualNamedType)
 	require.Len(t, got["inter"]["A"].Methods, 0)
+	require.Contains(t, got["inter"]["A"].FilePath, "go-dependency-graph/pkg/parse/testdata/inter/a.go")
 
 	require.Contains(t, got["inter"], "B")
 	require.NotNil(t, got["inter"]["B"].Methods)
 	require.NotNil(t, got["inter"]["B"].ActualNamedType)
 	require.Len(t, got["inter"]["B"].Methods, 2)
+	require.Contains(t, got["inter"]["B"].FilePath, "go-dependency-graph/pkg/parse/testdata/inter/b.go")
 	require.Equal(t, "FuncA()", got["inter"]["B"].Methods[0].String())
 	require.Equal(t, "FuncB()", got["inter"]["B"].Methods[1].String())
 
@@ -54,12 +58,14 @@ func TestExtractInter(t *testing.T) {
 	require.NotNil(t, got["inter"]["C"].Methods)
 	require.NotNil(t, got["inter"]["C"].ActualNamedType)
 	require.Len(t, got["inter"]["C"].Methods, 1)
+	require.Contains(t, got["inter"]["C"].FilePath, "go-dependency-graph/pkg/parse/testdata/inter/c.go")
 	require.Equal(t, "FuncA()", got["inter"]["C"].Methods[0].String())
 
 	require.Contains(t, got["inter"], "D")
 	require.NotNil(t, got["inter"]["D"].Methods)
 	require.NotNil(t, got["inter"]["D"].ActualNamedType)
 	require.Len(t, got["inter"]["D"].Methods, 1)
+	require.Contains(t, got["inter"]["D"].FilePath, "go-dependency-graph/pkg/parse/testdata/inter/d.go")
 	require.Equal(t, "FuncA()", got["inter"]["D"].Methods[0].String())
 }
 
