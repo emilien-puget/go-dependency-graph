@@ -1,7 +1,7 @@
 package mockery
 
 import (
-	"bytes"
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,28 +75,47 @@ func assertDirectoriesEqual(t *testing.T, gotDir, expectDir string) {
 			return nil // Continue walking
 		}
 
-		// Compare file contents
-		content1, err := os.ReadFile(gotPath)
-		if err != nil {
-			t.Errorf("Error reading file: %s", err)
-			return nil
-		}
-
-		content2, err := os.ReadFile(expectPath)
-		if err != nil {
-			t.Errorf("Error reading file: %s", err)
-			return nil
-		}
-
-		if !bytes.Equal(content1, content2) {
-			t.Errorf("File contents do not match: %s", relativePath)
-		}
+		// Compare file contents line by line
+		assertFilesEqualLineByLine(t, gotPath, expectPath)
 
 		return nil
 	})
 	if err != nil {
 		t.Errorf("Error walking directories: %s", err)
 	}
+}
+
+func assertFilesEqualLineByLine(t *testing.T, filePath1, filePath2 string) {
+	t.Helper()
+
+	file1, err := os.Open(filePath1)
+	if err != nil {
+		t.Fatalf("Error opening file: %s", err)
+	}
+	defer file1.Close()
+
+	file2, err := os.Open(filePath2)
+	if err != nil {
+		t.Fatalf("Error opening file: %s", err)
+	}
+	defer file2.Close()
+
+	scanner1 := bufio.NewScanner(file1)
+	scanner2 := bufio.NewScanner(file2)
+
+	lineNumber := 1
+	for scanner1.Scan() {
+		assert.True(t, scanner2.Scan(), "File contents do not match at line %d", lineNumber)
+
+		line1 := scanner1.Text()
+		line2 := scanner2.Text()
+
+		assert.Equal(t, line1, line2, "File contents do not match at line %d", lineNumber)
+
+		lineNumber++
+	}
+
+	assert.False(t, scanner2.Scan(), "File contents do not match at line %d", lineNumber)
 }
 
 func copyFile(src, dst string) error {
