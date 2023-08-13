@@ -75,6 +75,7 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 			Methods:         sDecl.Methods,
 			ActualNamedType: sDecl.ActualNamedType,
 			P:               p,
+			FilePath:        sDecl.FilePath,
 		}
 		if len(structDoc[packageName+"."+name]) > 3 {
 			newNode.Doc = structDoc[packageName+"."+name][3:]
