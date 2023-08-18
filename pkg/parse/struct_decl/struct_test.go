@@ -9,7 +9,7 @@ import (
 
 func TestSearch(t *testing.T) {
 	t.Parallel()
-	pkgs, err := package_list.GetPackagesToParse("../testdata/fn")
+	pkgs, err := package_list.GetPackagesToParse("../testdata/fn", nil)
 	require.NoError(t, err)
 
 	var docs []map[string]string
