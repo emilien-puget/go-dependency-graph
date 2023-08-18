@@ -17,7 +17,7 @@ type AstSchema struct {
 }
 
 // Parse parses the project located under pathDir and returns an AstSchema.
-func Parse(pathDir string) (AstSchema, error) {
+func Parse(pathDir string, skipDirs []string) (AstSchema, error) {
 	pathDir, err := filepath.Abs(pathDir)
 	if err != nil {
 		return AstSchema{}, fmt.Errorf("filepath.Abs:%w", err)
@@ -31,7 +31,7 @@ func Parse(pathDir string) (AstSchema, error) {
 		Graph:      NewGraph(),
 	}
 
-	pkgs, err := package_list.GetPackagesToParse(pathDir)
+	pkgs, err := package_list.GetPackagesToParse(pathDir, skipDirs)
 	if err != nil {
 		return AstSchema{}, fmt.Errorf("package_list.GetPackagesToParse:%w", err)
 	}

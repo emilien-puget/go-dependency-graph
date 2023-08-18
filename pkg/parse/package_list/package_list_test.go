@@ -1,8 +1,10 @@
 package package_list
 
 import (
+	"path/filepath"
 	"testing"
 
+	"github.com/emilien-puget/go-dependency-graph/pkg/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,7 +27,9 @@ func TestGetPackagesToParse(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetPackagesToParse(tt.pathDir)
+			abs, err := filepath.Abs(tt.pathDir)
+			require.NoError(t, err)
+			got, err := GetPackagesToParse(abs, []string{config.VendorDir})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetPackagesToParse() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -42,6 +46,6 @@ func TestGetPackagesToParse(t *testing.T) {
 
 func BenchmarkGetPackagesToParse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = GetPackagesToParse("../testdata/inter")
+		_, _ = GetPackagesToParse("../testdata/inter", nil)
 	}
 }

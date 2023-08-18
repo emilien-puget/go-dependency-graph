@@ -40,8 +40,7 @@ func generateMockForNode(c config.Config, node *parse.Node) error {
 			DisableVersionString: true,
 			Exported:             true,
 			InPackage:            false,
-			KeepTree:             c.InPackage,
-			PackageName:          determinePackage(c, node),
+			KeepTree:             false,
 			WithExpecter:         true,
 		},
 		&pkg.Interface{
@@ -50,7 +49,7 @@ func generateMockForNode(c config.Config, node *parse.Node) error {
 			NamedType:       node.ActualNamedType,
 			ActualInterface: types.NewInterfaceType(funcs, nil),
 		},
-		determinePackageName(c, node),
+		"mocks",
 	)
 
 	err := generator.GenerateAll(context.Background())
@@ -71,28 +70,6 @@ func generateMockForNode(c config.Config, node *parse.Node) error {
 	return nil
 }
 
-func determinePackage(c config.Config, node *parse.Node) string {
-	if c.InPackage {
-		return node.PackageName + "_test"
-	}
-	return node.PackageName
-}
-
 func determineMockFilePath(c config.Config, node *parse.Node) string {
-	if !c.InPackage {
-		return filepath.Join(c.OutOfPackageMocksDirectory, node.PackageName+node.StructName+".go")
-	}
-	dir, file := filepath.Split(node.FilePath)
-
-	fileName := file[:len(file)-len(filepath.Ext(file))]
-
-	return filepath.Join(dir, fileName+"_mocks_test.go")
-}
-
-func determinePackageName(c config.Config, n *parse.Node) string {
-	if !c.InPackage {
-		return "mocks"
-	}
-
-	return n.PackageName + "_test"
+	return filepath.Join(c.OutOfPackageMocksDirectory, node.PackageName+node.StructName+".go")
 }

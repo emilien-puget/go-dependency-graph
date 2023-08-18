@@ -12,16 +12,15 @@ import (
 
 const (
 	goFileExtension = ".go"
-	vendorDir       = "vendor"
 )
 
-func GetPackagesToParse(pathDir string) ([]*packages.Package, error) {
+func GetPackagesToParse(pathDir string, skipDirs []string) ([]*packages.Package, error) {
 	cfg := &packages.Config{
 		Dir:   pathDir,
 		Mode:  packages.NeedName | packages.NeedImports | packages.NeedDeps | packages.NeedExportFile | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,
 		Tests: false,
 	}
-	dirs, err := findGoSourceDirectories(pathDir)
+	dirs, err := findGoSourceDirectories(pathDir, skipDirs)
 	if err != nil {
 		return nil, fmt.Errorf("findGoSourceDirectories: %w", err)
 	}
@@ -32,16 +31,20 @@ func GetPackagesToParse(pathDir string) ([]*packages.Package, error) {
 	return pkgs, nil
 }
 
-func findGoSourceDirectories(pathDir string) ([]string, error) {
+func findGoSourceDirectories(pathDir string, skipDirs []string) ([]string, error) {
 	uniqueDirs := make(map[string]bool)
 
 	err := filepath.WalkDir(pathDir, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return fmt.Errorf("filepath.WalkDir: %w", err)
 		}
-		if strings.Contains(p, string(os.PathSeparator)+vendorDir) {
-			return nil
+
+		for i := range skipDirs {
+			if strings.Contains(p, string(os.PathSeparator)+skipDirs[i]+string(os.PathSeparator)) {
+				return nil
+			}
 		}
+
 		if !d.IsDir() && strings.HasSuffix(d.Name(), goFileExtension) {
 			dir, _ := filepath.Split(p)
 			absDir, absErr := filepath.Abs(dir)

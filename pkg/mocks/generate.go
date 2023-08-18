@@ -27,13 +27,11 @@ func Generate(generator string, c config.Config, as parse.AstSchema) error {
 		return errUnknownGenerator
 	}
 
-	if !c.InPackage {
-		err := os.MkdirAll(c.OutOfPackageMocksDirectory, os.FileMode(0o755))
-		if err != nil {
-			return err
-		}
+	err := os.MkdirAll(c.OutOfPackageMocksDirectory, os.FileMode(0o755))
+	if err != nil {
+		return err
 	}
-	err := gen(
+	err = gen(
 		c,
 		as,
 	)
