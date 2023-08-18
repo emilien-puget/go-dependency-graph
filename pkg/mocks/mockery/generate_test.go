@@ -3,7 +3,6 @@ package mockery
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,13 +15,12 @@ import (
 
 func TestGenerateFromSchema_outofpackage(t *testing.T) {
 	t.Parallel()
-	as, err := parse.Parse("testdata/named_inter")
+	as, err := parse.Parse("testdata/named_inter", nil)
 	require.NoError(t, err)
 
 	dir := t.TempDir()
 	err = GenerateFromSchema(
 		config.Config{
-			InPackage:                  false,
 			OutOfPackageMocksDirectory: dir,
 		},
 		as,
@@ -30,27 +28,6 @@ func TestGenerateFromSchema_outofpackage(t *testing.T) {
 	require.NoError(t, err)
 
 	assertDirectoriesEqual(t, dir, "testdata/expect_named_inter/out_of_package")
-}
-
-func TestGenerateFromSchema_inpackage(t *testing.T) {
-	t.Parallel()
-
-	tempDir := t.TempDir()
-
-	err := copyDir("testdata/named_inter", tempDir)
-	require.NoError(t, err)
-	as, err := parse.Parse(tempDir)
-	require.NoError(t, err)
-
-	err = GenerateFromSchema(
-		config.Config{
-			InPackage: true,
-		},
-		as,
-	)
-	require.NoError(t, err)
-
-	assertDirectoriesEqual(t, tempDir, "testdata/expect_named_inter/in_package")
 }
 
 func assertDirectoriesEqual(t *testing.T, gotDir, expectDir string) {
@@ -116,57 +93,4 @@ func assertFilesEqualLineByLine(t *testing.T, filePath1, filePath2 string) {
 	}
 
 	assert.False(t, scanner2.Scan(), "File contents do not match at line %d", lineNumber)
-}
-
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer dstFile.Close()
-
-	_, err = io.Copy(dstFile, srcFile)
-	return err
-}
-
-func copyDir(src, dst string) error {
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	err = os.MkdirAll(dst, srcInfo.Mode())
-	if err != nil {
-		return err
-	}
-
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-
-		if entry.IsDir() {
-			err = copyDir(srcPath, dstPath)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = copyFile(srcPath, dstPath)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
