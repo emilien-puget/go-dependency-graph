@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"go/ast"
+	"path/filepath"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/package_list"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
@@ -17,6 +18,10 @@ type AstSchema struct {
 
 // Parse parses the project located under pathDir and returns an AstSchema.
 func Parse(pathDir string) (AstSchema, error) {
+	pathDir, err := filepath.Abs(pathDir)
+	if err != nil {
+		return AstSchema{}, fmt.Errorf("filepath.Abs:%w", err)
+	}
 	modulePath, err := getModulePath(pathDir)
 	if err != nil {
 		return AstSchema{}, fmt.Errorf("getModulePath:%w", err)
