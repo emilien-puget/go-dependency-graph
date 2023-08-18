@@ -104,23 +104,76 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 title testdata/fn
 
 Container_Boundary(fn, "fn") {
-Component(fn_A, "fn.A", "", "")
-Component(fn_B, "fn.B", "", "")
-Component(fn_C, "fn.C", "", "")
-Component(fn_D, "fn.D", "", "")
+Component("fn_A", "fn.A", "", "")
+Component("fn_B", "fn.B", "", "")
+Component("fn_C", "fn.C", "", "")
+Component("fn_D", "fn.D", "", "")
 
 }
 
 
 Container_Boundary(pa, "pa") {
-Component(pa_A, "pa.A", "", "A pa struct.")
+Component("pa_A", "pa.A", "", "A pa struct.")
 
 }
-Rel(fn_A, "fn_B", "FuncA")
-Rel(fn_A, "fn_B", "FuncB")
-Rel(fn_A, "fn_D", "FuncA")
-Rel(fn_B, "fn_C", "FuncA")
-Rel(fn_D, "pa_A", "FuncFoo")
+Rel("fn_A", "fn_B", "FuncA")
+Rel("fn_A", "fn_B", "FuncB")
+Rel("fn_A", "fn_D", "FuncA")
+Rel("fn_B", "fn_C", "FuncA")
+Rel("fn_D", "pa_A", "FuncFoo")
+
+@enduml`, file.String())
+}
+
+func TestGenerateUmlFileFromSchema_ext_dep(t *testing.T) {
+	file := &bytes.Buffer{}
+	buff := bufio.NewWriter(file)
+
+	graph := parse.NewGraph()
+	extA := &parse.Node{
+		Name:        "ext_dep.A",
+		PackageName: "ext_dep",
+		StructName:  "A",
+		External:    false,
+	}
+	graph.AddNode(extA)
+	node := &parse.Node{
+		Name:        "net/http.Client",
+		PackageName: "net/http",
+		StructName:  "Client",
+		Methods:     nil,
+		Doc:         "",
+		External:    true,
+	}
+	graph.AddNode(node)
+	graph.AddEdge(extA, &parse.Adj{
+		Node: node,
+		Func: nil,
+	})
+	err := GenerateComponentFromSchema(buff, parse.AstSchema{
+		ModulePath: "testdata/ext_dep",
+		Graph:      graph,
+	})
+	buff.Flush()
+	assert.NoError(t, err)
+
+	assert.Equal(t, `@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title testdata/ext_dep
+
+Container_Boundary(ext_dep, "ext_dep") {
+Component("ext_dep_A", "ext_dep.A", "", "")
+
+}
+
+
+Container_Boundary(net/http, "net/http") {
+Component("net_http_Client", "net/http.Client", "", "")
+
+}
+Component_Ext(net_http_Client, "net_http.Client", "", "")
+Rel("ext_dep_A", "net_http_Client", "\"net/http.Client\"")
 
 @enduml`, file.String())
 }

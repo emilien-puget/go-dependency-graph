@@ -15,7 +15,8 @@ var replacer *strings.Replacer
 
 // GenerateComponentFromSchema generates a C4 plantuml component.
 func GenerateComponentFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
-	replacer = strings.NewReplacer(".", "_", "/", "_")
+	replacer = strings.NewReplacer(".", "_", "-", "_", "/", "_")
+
 	_, err := writer.WriteString("@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml\n")
 	if err != nil {
 		return err
@@ -50,6 +51,14 @@ func GenerateComponentFromSchema(writer *bufio.Writer, s parse.AstSchema) error 
 	return nil
 }
 
+func getServiceID(service *parse.Node) string {
+	return "\"" + replacer.Replace(service.PackageName+"."+service.StructName) + "\""
+}
+
+func getServiceLabel(service *parse.Node) string {
+	return "\"" + service.PackageName + "." + service.StructName + "\""
+}
+
 func printExternalRelations(writer *bufio.Writer, externalRelations map[string]string) error {
 	for dep, rel := range externalRelations {
 		_, err := fmt.Fprintf(writer, "Component_Ext(%s, %q, \"\", \"\")\n", replacer.Replace(dep), dep)
@@ -68,16 +77,16 @@ func handlePackages(writer *bufio.Writer, packageName string, services []*parse.
 	packageUML := fmt.Sprintf("\n\nContainer_Boundary(%s, %q) {\n", packageName, packageName)
 	relations := ""
 	for _, service := range services {
-		fqdn := service.PackageName + "." + service.StructName
-		fqdnID := replacer.Replace(fqdn)
-		packageUML += fmt.Sprintf("Component(%s, %q, \"\", %q)\n", fqdnID, fqdn, service.Doc)
+		serviceLabel := getServiceLabel(service)
+		serviceID := getServiceID(service)
+		packageUML += fmt.Sprintf("Component(%s, %s, \"\", %q)\n", serviceID, serviceLabel, service.Doc)
 
 		for _, d := range graph.GetAdjacency(service) {
 			if d.Node.External {
-				externalRelations[strings.ReplaceAll(d.Node.PackageName, "/", packageSeparator)+"."+d.Node.StructName] += getRelation(d, fqdnID)
+				externalRelations[strings.ReplaceAll(d.Node.PackageName, "/", packageSeparator)+"."+d.Node.StructName] += getRelation(serviceID, d)
 				continue
 			}
-			relations += getRelation(d, fqdnID)
+			relations += getRelation(serviceID, d)
 		}
 	}
 	packageUML += "\n}\n"
@@ -88,12 +97,12 @@ func handlePackages(writer *bufio.Writer, packageName string, services []*parse.
 	return relations, nil
 }
 
-func getRelation(d *parse.Adj, fqdn string) (relations string) {
+func getRelation(sourceServiceID string, d *parse.Adj) (relations string) {
 	if len(d.Func) == 0 {
-		return fmt.Sprintf("Rel(%s, %q, %q)\n", fqdn, strings.ReplaceAll(d.Node.PackageName, "/", packageSeparator)+packageSeparator+d.Node.StructName, d.Node.PackageName+"."+d.Node.StructName)
+		return fmt.Sprintf("Rel(%s, %s, %q)\n", sourceServiceID, getServiceID(d.Node), getServiceLabel(d.Node))
 	}
 	for _, fn := range d.Func {
-		relations += fmt.Sprintf("Rel(%s, %q, %q)\n", fqdn, strings.ReplaceAll(d.Node.PackageName, "/", packageSeparator)+packageSeparator+d.Node.StructName, fn)
+		relations += fmt.Sprintf("Rel(%s, %s, %q)\n", sourceServiceID, getServiceID(d.Node), fn)
 	}
 	return relations
 }
