@@ -4,13 +4,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/emilien-puget/go-dependency-graph/pkg/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/package_list"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExtractExtDep(t *testing.T) {
 	t.Parallel()
-	pkgs, err := package_list.GetPackagesToParse("../testdata/ext_dep")
+	pkgs, err := package_list.GetPackagesToParse("../testdata/ext_dep", []string{config.VendorDir})
 	require.NoError(t, err)
 	got := Extract(pkgs)
 
@@ -26,7 +27,7 @@ func TestExtractExtDep(t *testing.T) {
 
 func TestExtractInter(t *testing.T) {
 	t.Parallel()
-	pkgs, err := package_list.GetPackagesToParse("../testdata/inter")
+	pkgs, err := package_list.GetPackagesToParse("../testdata/inter", nil)
 	require.NoError(t, err)
 	got := Extract(pkgs)
 
@@ -72,7 +73,7 @@ func TestExtractInter(t *testing.T) {
 
 func TestExtractNamedInter(t *testing.T) {
 	t.Parallel()
-	pkgs, err := package_list.GetPackagesToParse("../testdata/named_inter")
+	pkgs, err := package_list.GetPackagesToParse("../testdata/named_inter", nil)
 	require.NoError(t, err)
 	got := Extract(pkgs)
 
@@ -113,7 +114,7 @@ func TestExtractNamedInter(t *testing.T) {
 
 func TestExtractFunc(t *testing.T) {
 	t.Parallel()
-	pkgs, err := package_list.GetPackagesToParse("../testdata/fn")
+	pkgs, err := package_list.GetPackagesToParse("../testdata/fn", nil)
 	require.NoError(t, err)
 	got := Extract(pkgs)
 

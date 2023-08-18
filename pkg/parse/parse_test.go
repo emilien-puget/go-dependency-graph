@@ -25,7 +25,7 @@ func TestParse_error(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := Parse(tt.pathDir)
+			_, err := Parse(tt.pathDir, nil)
 			if !tt.wantErr(t, err, fmt.Sprintf("Parse(%v)", tt.pathDir)) {
 				return
 			}
@@ -35,7 +35,7 @@ func TestParse_error(t *testing.T) {
 
 func TestParse_ext_dep(t *testing.T) {
 	t.Parallel()
-	parse, err := Parse("testdata/ext_dep")
+	parse, err := Parse("testdata/ext_dep", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()
@@ -70,7 +70,7 @@ func TestParse_ext_dep(t *testing.T) {
 
 func TestParse_fn(t *testing.T) {
 	t.Parallel()
-	parse, err := Parse("testdata/fn")
+	parse, err := Parse("testdata/fn", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()
@@ -159,7 +159,7 @@ func TestParse_fn(t *testing.T) {
 
 func TestParse_named_inter(t *testing.T) {
 	t.Parallel()
-	parse, err := Parse("testdata/named_inter")
+	parse, err := Parse("testdata/named_inter", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()
@@ -247,7 +247,7 @@ func TestParse_named_inter(t *testing.T) {
 
 func TestParse_inter(t *testing.T) {
 	t.Parallel()
-	parse, err := Parse("testdata/inter")
+	parse, err := Parse("testdata/inter", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()
@@ -338,7 +338,7 @@ func TestParse_inter(t *testing.T) {
 func TestParse_wire_sample(t *testing.T) {
 	t.Parallel()
 
-	parse, err := Parse("testdata/wire_sample")
+	parse, err := Parse("testdata/wire_sample", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()
@@ -365,7 +365,7 @@ func TestParse_wire_sample(t *testing.T) {
 
 func TestParse_package_name_mismatch(t *testing.T) {
 	t.Parallel()
-	parse, err := Parse("testdata/package_name_mismatch")
+	parse, err := Parse("testdata/package_name_mismatch", nil)
 	assert.NoError(t, err)
 
 	graph := NewGraph()

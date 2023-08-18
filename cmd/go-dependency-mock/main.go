@@ -6,21 +6,23 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/emilien-puget/go-dependency-graph/pkg/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/mocks"
-	"github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
+	mocksconfig "github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
 func main() {
 	project := flag.String("project", "", "the path of the project to inspect")
 	generator := flag.String("generator", "mockery", "the name of the generator to use, [mockery], default mockery")
-	inPackage := flag.Bool("in-package", false, "whether the mocks are written in a specific package or in the same package as their struct")
-	outOfPackageMocksDirectory := flag.String("mocks-dir", config.DefaultOutOfPackageDirectory, "where the mocks will be written, only used if in-package is false")
+	outOfPackageMocksDirectory := flag.String("mocks-dir", mocksconfig.DefaultOutOfPackageDirectory, "where the mocks will be written")
+	skipFolders := flag.String("skip-dirs", mocksconfig.DefaultOutOfPackageDirectory+","+config.VendorDir, "a comma separate list of directory to ignore, default value is the mocks and vendor directory")
 
 	flag.Parse()
 
-	err := run(project, generator, outOfPackageMocksDirectory, *inPackage)
+	err := run(project, generator, outOfPackageMocksDirectory, skipFolders)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -33,27 +35,25 @@ var (
 	errMissingMocksDirectory = errors.New("mocks-folder is required")
 )
 
-func run(project, generator, outOfPackageMocksDirectory *string, inPackage bool) error {
-	if project == nil || *project == "" {
-		return errMissingProject
+func run(project, generator, outOfPackageMocksDirectory, f *string) error {
+	err := validateRequiredInput(project, generator)
+	if err != nil {
+		return err
 	}
 
-	if generator == nil || *generator == "" {
-		return errMissingGenerator
+	c := mocksconfig.Config{}
+
+	if outOfPackageMocksDirectory == nil || *outOfPackageMocksDirectory == "" {
+		return errMissingMocksDirectory
+	}
+	c.OutOfPackageMocksDirectory = filepath.Join(*project, *outOfPackageMocksDirectory)
+
+	var skipDirs []string
+	if f != nil || *f != "" {
+		skipDirs = strings.Split(*f, ",")
 	}
 
-	c := config.Config{
-		InPackage: inPackage,
-	}
-
-	if !inPackage {
-		if outOfPackageMocksDirectory == nil || *outOfPackageMocksDirectory == "" {
-			return errMissingMocksDirectory
-		}
-		c.OutOfPackageMocksDirectory = *project + string(filepath.Separator) + *outOfPackageMocksDirectory
-	}
-
-	as, err := parse.Parse(*project)
+	as, err := parse.Parse(*project, skipDirs)
 	if err != nil {
 		return err
 	}
@@ -67,5 +67,16 @@ func run(project, generator, outOfPackageMocksDirectory *string, inPackage bool)
 		return err
 	}
 
+	return nil
+}
+
+func validateRequiredInput(project, generator *string) error {
+	if project == nil || *project == "" {
+		return errMissingProject
+	}
+
+	if generator == nil || *generator == "" {
+		return errMissingGenerator
+	}
 	return nil
 }
