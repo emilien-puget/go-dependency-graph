@@ -2,16 +2,30 @@ package mockery
 
 import (
 	"context"
+	"fmt"
 	"go/types"
 	"os"
 	"path/filepath"
 
-	"github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/vektra/mockery/v2/pkg"
 )
 
-func GenerateFromSchema(c config.Config, as parse.AstSchema) error {
+type Generator struct {
+	OutOfPackageMocksDirectory string
+}
+
+func NewGenerator(outOfPackageMocksDirectory string) *Generator {
+	return &Generator{
+		OutOfPackageMocksDirectory: outOfPackageMocksDirectory,
+	}
+}
+
+func (g Generator) GenerateFromSchema(as parse.AstSchema) error {
+	err := os.MkdirAll(g.OutOfPackageMocksDirectory, os.FileMode(0o755))
+	if err != nil {
+		return fmt.Errorf("os.MkdirAll:%w", err)
+	}
 	for _, node := range as.Graph.TopologicalSort() {
 		if len(node.InboundEdges) == 0 {
 			continue
@@ -21,15 +35,15 @@ func GenerateFromSchema(c config.Config, as parse.AstSchema) error {
 			continue
 		}
 
-		err := generateMockForNode(c, node)
+		err := g.generateMockForNode(node)
 		if err != nil {
-			return err
+			return fmt.Errorf("g.generateMockForNode:%w", err)
 		}
 	}
 	return nil
 }
 
-func generateMockForNode(c config.Config, node *parse.Node) error {
+func (g Generator) generateMockForNode(node *parse.Node) error {
 	funcs := make([]*types.Func, 0, len(node.Methods))
 	for i := range node.Methods {
 		funcs = append(funcs, node.Methods[i].TypFuc)
@@ -57,7 +71,7 @@ func generateMockForNode(c config.Config, node *parse.Node) error {
 		return err
 	}
 
-	file, err := os.OpenFile(determineMockFilePath(c, node), os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.FileMode(0o644))
+	file, err := os.OpenFile(g.determineMockFilePath(node), os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.FileMode(0o644))
 	if err != nil {
 		return err
 	}
@@ -70,6 +84,6 @@ func generateMockForNode(c config.Config, node *parse.Node) error {
 	return nil
 }
 
-func determineMockFilePath(c config.Config, node *parse.Node) string {
-	return filepath.Join(c.OutOfPackageMocksDirectory, node.PackageName+node.StructName+".go")
+func (g Generator) determineMockFilePath(node *parse.Node) string {
+	return filepath.Join(g.OutOfPackageMocksDirectory, node.PackageName+node.StructName+".go")
 }

@@ -89,7 +89,7 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 	graph.AddEdge(fnA, &parse.Adj{Node: fnD, Func: []string{"FuncA"}})
 	graph.AddEdge(fnB, &parse.Adj{Node: fnC, Func: []string{"FuncA"}})
 	graph.AddEdge(fnD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
-	err := GenerateClassFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Graph:      graph,
 	})
@@ -124,7 +124,7 @@ func TestGenerateMermaidClassFromSchema_ext_dep(t *testing.T) {
 		Node: node,
 		Func: nil,
 	})
-	err := GenerateClassFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/ext_dep",
 		Graph:      graph,
 	})
@@ -211,7 +211,7 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 	graph.AddEdge(interA, &parse.Adj{Node: interD, Func: []string{"FuncA"}})
 	graph.AddEdge(interB, &parse.Adj{Node: interC, Func: []string{"FuncA"}})
 	graph.AddEdge(interD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
-	err := GenerateClassFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/inter",
 		Graph:      graph,
 	})
@@ -240,7 +240,7 @@ func TestGenerateMermaidClassFromSchema_package_name_mismatch(t *testing.T) {
 	}
 	graph.AddNode(mainEvent)
 	graph.AddEdge(mainGreeter, &parse.Adj{Node: mainEvent})
-	err := GenerateClassFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/package_name_mismatch",
 		Graph:      graph,
 	})

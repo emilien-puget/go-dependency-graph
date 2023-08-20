@@ -91,7 +91,7 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 	graph.AddEdge(fnB, &parse.Adj{Node: fnC, Func: []string{"FuncA"}})
 	graph.AddEdge(fnD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	err := GenerateComponentFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Graph:      graph,
 	})
@@ -150,7 +150,7 @@ func TestGenerateUmlFileFromSchema_ext_dep(t *testing.T) {
 		Node: node,
 		Func: nil,
 	})
-	err := GenerateComponentFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
 		ModulePath: "testdata/ext_dep",
 		Graph:      graph,
 	})
@@ -173,7 +173,7 @@ Component("net_http_Client", "net/http.Client", "", "")
 
 }
 Component_Ext(net_http_Client, "net_http.Client", "", "")
-Rel("ext_dep_A", "net_http_Client", "\"net/http.Client\"")
+Rel("ext_dep_A", "net_http_Client", "net/http.Client")
 
 @enduml`, file.String())
 }

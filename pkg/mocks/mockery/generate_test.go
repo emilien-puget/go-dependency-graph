@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,12 +18,7 @@ func TestGenerateFromSchema_outofpackage(t *testing.T) {
 	require.NoError(t, err)
 
 	dir := t.TempDir()
-	err = GenerateFromSchema(
-		config.Config{
-			OutOfPackageMocksDirectory: dir,
-		},
-		as,
-	)
+	err = NewGenerator(dir).GenerateFromSchema(as)
 	require.NoError(t, err)
 
 	assertDirectoriesEqual(t, dir, "testdata/expect_named_inter/out_of_package")
