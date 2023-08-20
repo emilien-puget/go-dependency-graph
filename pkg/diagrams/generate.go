@@ -9,29 +9,25 @@ import (
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 )
 
-type generateFromSchema func(writer *bufio.Writer, s parse.AstSchema) error
+type Generator interface {
+	GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) error
+	GetDefaultResultFileName() string
+}
 
 const (
 	GeneratorC4PlantumlComponent = "c4_plantuml_component"
 	GeneratorMermaidClass        = "mermaid_class"
 )
 
-var generators = map[string]generateFromSchema{
-	GeneratorC4PlantumlComponent: c4.GenerateComponentFromSchema,
-	GeneratorMermaidClass:        mermaid.GenerateClassFromSchema,
-}
-
 var errUnknownGenerator = errors.New("unknown generator")
 
-func Generate(generator string, writer *bufio.Writer, as parse.AstSchema) error {
-	gen, ok := generators[generator]
-	if !ok {
-		return errUnknownGenerator
+func GetGenerator(generator string) (Generator, error) {
+	switch generator {
+	case GeneratorC4PlantumlComponent:
+		return c4.NewGenerator(), nil
+	case GeneratorMermaidClass:
+		return mermaid.NewGenerator(), nil
+	default:
+		return nil, errUnknownGenerator
 	}
-
-	err := gen(writer, as)
-	if err != nil {
-		return err
-	}
-	return nil
 }

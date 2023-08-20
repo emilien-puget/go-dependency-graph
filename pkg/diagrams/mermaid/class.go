@@ -14,8 +14,18 @@ const (
 	packageSeparator = "/"
 )
 
-// GenerateClassFromSchema generates a class diagram for mermaid.
-func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
+type Generator struct{}
+
+func NewGenerator() *Generator {
+	return &Generator{}
+}
+
+func (g Generator) GetDefaultResultFileName() string {
+	return "diag.mermaid"
+}
+
+// GenerateFromSchema generates a class diagram for mermaid.
+func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	_, err := writer.WriteString("classDiagram\n")
 	if err != nil {
 		return err
@@ -25,7 +35,7 @@ func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	var relationBuf bytes.Buffer
 
 	for _, k := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
-		err := handlePackages(&classBuf, &relationBuf, k, s.Graph.NodesByPackage[k], s.Graph)
+		err := g.handlePackages(&classBuf, &relationBuf, k, s.Graph.NodesByPackage[k], s.Graph)
 		if err != nil {
 			return err
 		}
@@ -45,14 +55,14 @@ func GenerateClassFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
 	return nil
 }
 
-func handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, services []*parse.Node, graph *parse.Graph) error {
+func (g Generator) handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, services []*parse.Node, graph *parse.Graph) error {
 	_, err := fmt.Fprintf(classBuf, "\nnamespace %s {\n", packageName)
 	if err != nil {
 		return err
 	}
 
 	for i := range services {
-		err := handleService(classBuf, relationBuf, packageName, services[i].StructName, services[i], graph)
+		err := g.handleService(classBuf, relationBuf, packageName, services[i].StructName, services[i], graph)
 		if err != nil {
 			return err
 		}
@@ -61,7 +71,7 @@ func handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, ser
 	return nil
 }
 
-func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName string, service *parse.Node, graph *parse.Graph) error {
+func (g Generator) handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName string, service *parse.Node, graph *parse.Graph) error {
 	serviceFqdn := packageName + packageSeparator + serviceName
 
 	_, err := fmt.Fprintf(classBuf, "class `%s` {\n", serviceFqdn)
@@ -75,7 +85,7 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 	classBuf.WriteString("}\n\n")
 
 	for _, d := range graph.GetAdjacenciesSortedByName(service) {
-		err := handleDeps(d, relationBuf, serviceFqdn)
+		err := g.handleDeps(d, relationBuf, serviceFqdn)
 		if err != nil {
 			return err
 		}
@@ -83,7 +93,7 @@ func handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName
 	return nil
 }
 
-func handleDeps(deps *parse.Adj, relationBuf *bytes.Buffer, serviceFqdn string) error {
+func (g Generator) handleDeps(deps *parse.Adj, relationBuf *bytes.Buffer, serviceFqdn string) error {
 	s := deps.Node.PackageName + packageSeparator + deps.Node.StructName
 	if len(deps.Func) != 0 {
 		sort.Slice(deps.Func, func(i, j int) bool {
