@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/stretchr/testify v1.8.4
-	github.com/vektra/mockery/v2 v2.32.4
+	github.com/vektra/mockery/v2 v2.33.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/tools v0.12.0
 )
