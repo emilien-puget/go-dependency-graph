@@ -76,7 +76,7 @@ func (g Generator) removeModulePathPrefix(service *parse.Node, path string) stri
 	return s
 }
 
-func (g Generator) trimPackageName(packageName string, path string) string {
+func (g Generator) trimPackageName(packageName, path string) string {
 	trimedPackageName := strings.TrimPrefix(packageName, path)
 	trimedPackageName = strings.TrimPrefix(trimedPackageName, "/")
 	return trimedPackageName

@@ -69,7 +69,7 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 		if !ok {
 			continue
 		}
-		name, deps, sDecl := searchProvider(modulePath, d, packageName, imports, p.TypesInfo, types)
+		name, deps, sDecl := searchProvider(d, packageName, imports, p.TypesInfo, types)
 		if name == "" {
 			continue
 		}
