@@ -30,7 +30,7 @@ func Extract(pkgs []*packages.Package) map[string]map[string]*Decl {
 	declarations := make(map[string]map[string]*Decl)
 	for i := range pkgs {
 		pkgType := extractTypes(pkgs[i])
-		declarations[pkgs[i].Name] = pkgType
+		declarations[pkgs[i].ID] = pkgType
 	}
 	return declarations
 }

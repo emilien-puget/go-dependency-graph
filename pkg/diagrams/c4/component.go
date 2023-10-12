@@ -40,7 +40,7 @@ func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) e
 	externalRelations := make(map[string]string)
 
 	for _, packageName := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
-		rel, err := g.handlePackages(writer, packageName, s.Graph.NodesByPackage[packageName], externalRelations, s.Graph)
+		rel, err := g.handlePackages(writer, packageName, s.Graph.NodesByPackage[packageName], externalRelations, s.Graph, s.ModulePath)
 		if err != nil {
 			return err
 		}
@@ -61,12 +61,30 @@ func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) e
 	return nil
 }
 
-func (g Generator) getServiceID(service *parse.Node) string {
-	return "\"" + g.replacer.Replace(service.PackageName+"."+service.StructName) + "\""
+func (g Generator) getServiceID(service *parse.Node, path string) string {
+	s := g.removeModulePathPrefix(service, path)
+	return "\"" + g.replacer.Replace(s) + "\""
 }
 
-func (g Generator) getServiceLabel(service *parse.Node) string {
-	return "\"" + service.PackageName + "." + service.StructName + "\""
+func (g Generator) removeModulePathPrefix(service *parse.Node, path string) string {
+	trimedPackageName := g.trimPackageName(service.PackageName, path)
+	s := service.StructName
+
+	if trimedPackageName != "" {
+		s = trimedPackageName + "." + s
+	}
+	return s
+}
+
+func (g Generator) trimPackageName(packageName string, path string) string {
+	trimedPackageName := strings.TrimPrefix(packageName, path)
+	trimedPackageName = strings.TrimPrefix(trimedPackageName, "/")
+	return trimedPackageName
+}
+
+func (g Generator) getServiceLabel(service *parse.Node, path string) string {
+	s := g.removeModulePathPrefix(service, path)
+	return "\"" + s + "\""
 }
 
 func (g Generator) printExternalRelations(writer *bufio.Writer, externalRelations map[string]string) error {
@@ -83,20 +101,24 @@ func (g Generator) printExternalRelations(writer *bufio.Writer, externalRelation
 	return nil
 }
 
-func (g Generator) handlePackages(writer *bufio.Writer, packageName string, services []*parse.Node, externalRelations map[string]string, graph *parse.Graph) (string, error) {
-	packageUML := fmt.Sprintf("\n\nContainer_Boundary(%s, %q) {\n", packageName, packageName)
+func (g Generator) handlePackages(writer *bufio.Writer, packageName string, services []*parse.Node, externalRelations map[string]string, graph *parse.Graph, modulePath string) (string, error) {
+	name := g.trimPackageName(packageName, modulePath)
+	if name == "" {
+		name = packageName
+	}
+	packageUML := fmt.Sprintf("\n\nContainer_Boundary(%s, %q) {\n", name, name)
 	relations := ""
 	for _, service := range services {
-		serviceLabel := g.getServiceLabel(service)
-		serviceID := g.getServiceID(service)
+		serviceLabel := g.getServiceLabel(service, modulePath)
+		serviceID := g.getServiceID(service, modulePath)
 		packageUML += fmt.Sprintf("Component(%s, %s, \"\", %q)\n", serviceID, serviceLabel, service.Doc)
 
 		for _, d := range graph.GetAdjacency(service) {
 			if d.Node.External {
-				externalRelations[strings.ReplaceAll(d.Node.PackageName, "/", umlSeparator)+"."+d.Node.StructName] += g.getRelation(serviceID, d)
+				externalRelations[strings.ReplaceAll(d.Node.PackageName, "/", umlSeparator)+"."+d.Node.StructName] += g.getRelation(serviceID, d, "")
 				continue
 			}
-			relations += g.getRelation(serviceID, d)
+			relations += g.getRelation(serviceID, d, modulePath)
 		}
 	}
 	packageUML += "\n}\n"
@@ -107,12 +129,12 @@ func (g Generator) handlePackages(writer *bufio.Writer, packageName string, serv
 	return relations, nil
 }
 
-func (g Generator) getRelation(sourceServiceID string, d *parse.Adj) (relations string) {
+func (g Generator) getRelation(sourceServiceID string, d *parse.Adj, path string) (relations string) {
 	if len(d.Func) == 0 {
-		return fmt.Sprintf("Rel(%s, %s, %s)\n", sourceServiceID, g.getServiceID(d.Node), g.getServiceLabel(d.Node))
+		return fmt.Sprintf("Rel(%s, %s, %s)\n", sourceServiceID, g.getServiceID(d.Node, path), g.getServiceLabel(d.Node, path))
 	}
 	for _, fn := range d.Func {
-		relations += fmt.Sprintf("Rel(%s, %s, %q)\n", sourceServiceID, g.getServiceID(d.Node), fn)
+		relations += fmt.Sprintf("Rel(%s, %s, %q)\n", sourceServiceID, g.getServiceID(d.Node, path), fn)
 	}
 	return relations
 }

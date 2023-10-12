@@ -16,7 +16,7 @@ type dep struct {
 	External       bool
 }
 
-func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*struct_decl.Decl) (name string, deps map[string][]dep, decl *struct_decl.Decl) {
+func searchProvider(modulePath string, funcdecl *ast.FuncDecl, packageName string, imports map[string]importDecl, typesInfo *types.Info, t map[string]map[string]*struct_decl.Decl) (name string, deps map[string][]dep, decl *struct_decl.Decl) {
 	if len(funcdecl.Name.Name) < 3 || funcdecl.Name.Name[:3] != "New" {
 		return "", nil, nil
 	}
@@ -26,7 +26,7 @@ func searchProvider(funcdecl *ast.FuncDecl, packageName string, imports map[stri
 		return "", nil, nil
 	}
 
-	deps = searchDependencies(funcdecl, packageName, imports, typesInfo)
+	deps = searchDependencies(modulePath, funcdecl, packageName, imports, typesInfo)
 
 	searchDependenciesAssignment(funcdecl, deps, decl)
 	return name, deps, decl
@@ -52,7 +52,7 @@ func searchDependencyName(funcdecl *ast.FuncDecl) string {
 }
 
 // searchDependencies returns the dependency found in the provider type declaration.
-func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]importDecl, info *types.Info) (deps map[string][]dep) {
+func searchDependencies(modulePath string, funcdecl *ast.FuncDecl, name string, imports map[string]importDecl, info *types.Info) (deps map[string][]dep) {
 	deps = map[string][]dep{}
 	for _, param := range funcdecl.Type.Params.List {
 		if !checkDepsMethods(info.TypeOf(param.Type)) { // ignore dependencies without methods
@@ -66,6 +66,8 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 		external := imp.External
 		if packageName == "" {
 			packageName = name
+		} else {
+			packageName = imp.Path
 		}
 		varName := ""
 		for _, name := range param.Names {

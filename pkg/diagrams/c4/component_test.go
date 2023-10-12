@@ -9,9 +9,47 @@ import (
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestGenerateUmlFileFromSchema_withParse(t *testing.T) {
+	as, err := parse.Parse("../testdata/named_inter", nil)
+	require.NoError(t, err)
+
+	file := &bytes.Buffer{}
+	buff := bufio.NewWriter(file)
+	err = NewGenerator().GenerateFromSchema(buff, as)
+	require.NoError(t, err)
+	buff.Flush()
+
+	assert.Equal(t, `@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title testdata/named_inter
+
+Container_Boundary(testdata/named_inter, "testdata/named_inter") {
+Component("A", "A", "", "")
+Component("B", "B", "", "")
+Component("D", "D", "", "")
+Component("C", "C", "", "")
+
+}
+
+
+Container_Boundary(pa, "pa") {
+Component("pa_A", "pa.A", "", "A pa struct.")
+
+}
+Rel("A", "B", "FuncA")
+Rel("A", "B", "FuncB")
+Rel("A", "D", "FuncA")
+Rel("B", "C", "FuncA")
+Rel("D", "pa_A", "FuncFoo")
+
+@enduml`, file.String())
+}
 
 func TestGenerateUmlFileFromSchema(t *testing.T) {
 	file := &bytes.Buffer{}

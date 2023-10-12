@@ -52,14 +52,14 @@ func parsePackages(pkgs []*packages.Package, schema *AstSchema, types map[string
 	}
 }
 
-func parsePackage(p *packages.Package, as *AstSchema, types map[string]map[string]*struct_decl.Decl) {
+func parsePackage(p *packages.Package, schema *AstSchema, types map[string]map[string]*struct_decl.Decl) {
 	for _, f := range p.Syntax {
-		parseFile(f, p, as.ModulePath, types, as.Graph)
+		parseFile(f, p, schema.ModulePath, types, schema.Graph)
 	}
 }
 
 func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[string]map[string]*struct_decl.Decl, graph *Graph) {
-	packageName := f.Name.Name
+	packageName := p.ID
 
 	structDoc := struct_decl.GetStructDoc(f, packageName)
 
@@ -69,7 +69,7 @@ func parseFile(f *ast.File, p *packages.Package, modulePath string, types map[st
 		if !ok {
 			continue
 		}
-		name, deps, sDecl := searchProvider(d, packageName, imports, p.TypesInfo, types)
+		name, deps, sDecl := searchProvider(modulePath, d, packageName, imports, p.TypesInfo, types)
 		if name == "" {
 			continue
 		}
