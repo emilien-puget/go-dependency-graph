@@ -3,6 +3,7 @@ package c4
 import (
 	"bufio"
 	"fmt"
+	"sort"
 	"strings"
 
 	mymap "github.com/emilien-puget/go-dependency-graph/pkg/map"
@@ -108,8 +109,15 @@ func (g Generator) handlePackages(writer *bufio.Writer, packageName string, serv
 	}
 	packageUML := fmt.Sprintf("\n\nContainer_Boundary(%s, %q) {\n", name, name)
 	relations := ""
+	sort.SliceStable(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
 	for _, service := range services {
-		serviceLabel := g.getServiceLabel(service, modulePath)
+		serviceLabelIgnorePrefix := modulePath
+		if modulePath != name {
+			serviceLabelIgnorePrefix = modulePath + "/" + name
+		}
+		serviceLabel := g.getServiceLabel(service, serviceLabelIgnorePrefix)
 		serviceID := g.getServiceID(service, modulePath)
 		packageUML += fmt.Sprintf("Component(%s, %s, \"\", %q)\n", serviceID, serviceLabel, service.Doc)
 

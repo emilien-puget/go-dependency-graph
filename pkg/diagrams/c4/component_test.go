@@ -32,14 +32,14 @@ title testdata/named_inter
 Container_Boundary(testdata/named_inter, "testdata/named_inter") {
 Component("A", "A", "", "")
 Component("B", "B", "", "")
-Component("D", "D", "", "")
 Component("C", "C", "", "")
+Component("D", "D", "", "")
 
 }
 
 
 Container_Boundary(pa, "pa") {
-Component("pa_A", "pa.A", "", "A pa struct.")
+Component("pa_A", "A", "", "A pa struct.")
 
 }
 Rel("A", "B", "FuncA")
