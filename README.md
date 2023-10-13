@@ -22,99 +22,66 @@ cli https://github.com/mermaid-js/mermaid-cli to generate a svg/png/pdf file.
 @startuml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-title testdata/inter
-AddElementTag("external", $bgColor="#8CDE42FF")
+title testdata/named_inter
 
-Container_Boundary(inter, "inter") {
-Component(inter.A, "inter.A", "", "")
-Component(inter.B, "inter.B", "", "")
-Component(inter.C, "inter.C", "", "")
-Component(inter.D, "inter.D", "", "")
+Container_Boundary(testdata/named_inter, "testdata/named_inter") {
+Component("A", "A", "", "")
+Component("B", "B", "", "")
+Component("C", "C", "", "")
+Component("D", "D", "", "")
 
 }
 
 
 Container_Boundary(pa, "pa") {
-Component(pa.A, "pa.A", "", "A pa struct.")
+Component("pa_A", "A", "", "A pa struct.")
 
 }
-Rel(inter.A, "inter.B", "FuncA")
-Rel(inter.A, "inter.B", "FuncB")
-Rel(inter.A, "inter.D", "FuncA")
-Rel(inter.B, "inter.C", "FuncA")
-Rel(inter.D, "pa.A", "FuncA")
+Rel("A", "B", "FuncA")
+Rel("A", "B", "FuncB")
+Rel("A", "D", "FuncA")
+Rel("B", "C", "FuncA")
+Rel("D", "pa_A", "FuncFoo")
 
 @enduml
 ```
 
-http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2CwDYobxzvHaYvTUX3znfdlrplZHvidb3DHI4zAHLWxRMZEvvmmZeidzDIDYrF1WgVix27HPCrPzO-7jrBwEBqg1uamScde5nSMNsO2zmf1XYnAGXu20hMQY4C25omAqRCTZCSuF2_PJn0lzuxvGJPbQrhv9NvrzQOxHaGEsZfsR9ZBsb2Q96dcq4j0ESuGDKvovJz9NHgCrr9dVb3gclOsuEMJZxk-mYwlKDGWDR0-5i_LYh7gnBTuHtlps4edJ0aq_gNsshqb_pEvKIj-0000
+[www.plantuml.com](http://www.plantuml.com/plantuml/uml/ROx1QWCX48RlFeNTKmBDUkcff-owvDH2AVIyJ5Pf11r5HqefVVTg0akIUj33z_qpy-yJGQJiB7imkDYiD3yHXVGiH8Il_jFGAHzpqd7nI1gfNxmJmGBMcLqYPSrHoAVTMqKVho_2GI8T2vgbTy5ZdGbrFoD3LdFIPGW818BJQZPOqen9ZmG6TPn7dr51_DwqWe-yQ-5kot_OUcxJ3Lq9dh_psrwxiQAnxMH5ikscYgOhntvPitU0uWFSTmemtzOQU02UAEQ5-ikwTsrBzxNV8UCo5DF0umsUxjENeFo7Qt0jKit1-tfwhr5bP_y0)
 
 ### mermaid class
 
 ```mermaid
 classDiagram
 
-    namespace inter {
-        class `inter/A` {
-        }
-
-        class `inter/B` {
-            FuncA()
-            FuncB()
-        }
-
-        class `inter/C` {
-            FuncA()
-        }
-
-        class `inter/D` {
-            FuncA()
-        }
-
+  namespace testdata_named_inter {
+    class `testdata/named_inter/A`
+    class `testdata/named_inter/B` {
+      FuncA()
+      FuncB()
     }
-    namespace pa {
-        class `pa/A` {
-            FuncA()
-        }
 
+    class `testdata/named_inter/C` {
+      FuncA()
     }
-    `inter/A` ..> `inter/B`: FuncA
-    `inter/A` ..> `inter/B`: FuncB
-    `inter/A` ..> `inter/D`: FuncA
-    `inter/B` ..> `inter/C`: FuncA
-    `inter/D` ..> `pa/A`: FuncA
 
-```
+    class `testdata/named_inter/D` {
+      FuncA()
+    }
 
-## [Wire tutorial](https://github.com/google/wire/blob/main/_tutorial/main.go)
+  }
+  namespace testdata_named_inter_pa {
+    class `testdata/named_inter/pa/A` {
+      FuncFoo(foo string) (bar int, err error)
+    }
 
-### c4 plantuml component
+  }
+  `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncA
+  `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncB
+  `testdata/named_inter/A` ..> `testdata/named_inter/D`: FuncA
+  `testdata/named_inter/B` ..> `testdata/named_inter/C`: FuncA
+  `testdata/named_inter/D` ..> `testdata/named_inter/pa/A`: FuncFoo
 
-```puml
-@startuml
-!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
 
-title testdata/wire_sample
-
-Container_Boundary(main, "main") {
-Component(main.Greeter, "main.Greeter", "", "Greeter is the type charged with greeting guests.")
-Component(main.Event, "main.Event", "", "Event is a gathering with greeters.")
-
-}
-Rel(main.Greeter, main.Message, main.Message)
-Rel(main.Event, main.Greeter, main.Greeter)
-
-@enduml
-```
-
-http://www.plantuml.com/plantuml/uml/RO_1QiGW48RlFeNDgO5klFJKOqFPInTAeUSmcmn6K2CwDYobxzvHaYvTUX3znfdlrplZHvidb3DHI4zAHLWxRMZEvvmmZeidzDIDYrF1WgVix27HPCrPzO-7jrBwEBqg1uamScde5nSMNsO2zmf1XYnAGXu20hMQY4C25omAqRCTZCSuF2_PJn0lzuxvGJPbQrhv9NvrzQOxHaGEsZfsR9ZBsb2Q96dcq4j0ESuGDKvovJz9NHgCrr9dVb3gclOsuEMJZxk-mYwlKDGWDR0-5i_LYh7gnBTuHtlps4edJ0aq_gNsshqb_pEvKIj-0000
-
-### mermaid class
-
-```mermaid
-classDiagram
-    main_Greeter ..> main_Message
-    main_Event ..> main_Greeter
 ```
 
 # Installation
@@ -131,7 +98,6 @@ Available generator are as follows
 
 - `c4_plantuml_component`, the default value, more information about that format
   here : https://github.com/plantuml-stdlib/C4-PlantUML
-- `json`, the struct `parse.AstSchema` encoded in JSON
 - `mermaid_class`, a class diagram using mermaid
   syntax https://mermaid-js.github.io/mermaid/#/classDiagram?id=class-diagrams
 
