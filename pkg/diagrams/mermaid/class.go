@@ -112,7 +112,7 @@ func (g Generator) handleService(classBuf, relationBuf *bytes.Buffer, packageNam
 func (g Generator) handleDeps(deps *parse.Adj, relationBuf *bytes.Buffer, serviceFqdn string) error {
 	s := deps.Node.PackageName + packageSeparator + deps.Node.StructName
 	if len(deps.Func) != 0 {
-		sort.Slice(deps.Func, func(i, j int) bool {
+		sort.SliceStable(deps.Func, func(i, j int) bool {
 			return deps.Func[i] < deps.Func[j]
 		})
 		for _, fn := range deps.Func {

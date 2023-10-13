@@ -158,7 +158,7 @@ func (g *Graph) GetLeafNodes() []*Node {
 func (g *Graph) GetNodesSortedByName() []*Node {
 	sortedNodes := make([]*Node, len(g.Nodes))
 	copy(sortedNodes, g.Nodes)
-	sort.Slice(sortedNodes, func(i, j int) bool {
+	sort.SliceStable(sortedNodes, func(i, j int) bool {
 		return sortedNodes[i].Name < sortedNodes[j].Name
 	})
 	return sortedNodes
@@ -169,7 +169,7 @@ func (g *Graph) GetAdjacenciesSortedByName(node *Node) []*Adj {
 	adjacencies := g.Adj[node]
 	sortedAdjacencies := make([]*Adj, len(adjacencies))
 	copy(sortedAdjacencies, adjacencies)
-	sort.Slice(sortedAdjacencies, func(i, j int) bool {
+	sort.SliceStable(sortedAdjacencies, func(i, j int) bool {
 		return sortedAdjacencies[i].Node.Name < sortedAdjacencies[j].Node.Name
 	})
 	return sortedAdjacencies
