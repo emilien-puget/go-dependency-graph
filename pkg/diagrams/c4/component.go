@@ -121,7 +121,7 @@ func (g Generator) handlePackages(writer *bufio.Writer, packageName string, serv
 		serviceID := g.getServiceID(service, modulePath)
 		packageUML += fmt.Sprintf("Component(%s, %s, \"\", %q)\n", serviceID, serviceLabel, service.Doc)
 
-		for _, d := range graph.GetAdjacency(service) {
+		for _, d := range graph.GetAdjacenciesSortedByName(service) {
 			if d.Node.External {
 				externalRelations[strings.ReplaceAll(d.Node.PackageName, "/", umlSeparator)+"."+d.Node.StructName] += g.getRelation(serviceID, d, "")
 				continue
@@ -141,6 +141,9 @@ func (g Generator) getRelation(sourceServiceID string, d *parse.Adj, path string
 	if len(d.Func) == 0 {
 		return fmt.Sprintf("Rel(%s, %s, %s)\n", sourceServiceID, g.getServiceID(d.Node, path), g.getServiceLabel(d.Node, path))
 	}
+	sort.SliceStable(d.Func, func(i, j int) bool {
+		return d.Func[i] < d.Func[j]
+	})
 	for _, fn := range d.Func {
 		relations += fmt.Sprintf("Rel(%s, %s, %q)\n", sourceServiceID, g.getServiceID(d.Node, path), fn)
 	}
