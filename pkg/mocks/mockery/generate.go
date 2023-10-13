@@ -6,6 +6,7 @@ import (
 	"go/types"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/vektra/mockery/v2/pkg"
@@ -13,10 +14,12 @@ import (
 
 type Generator struct {
 	OutOfPackageMocksDirectory string
+	Replacer                   *strings.Replacer
 }
 
 func NewGenerator(outOfPackageMocksDirectory string) *Generator {
 	return &Generator{
+		Replacer:                   strings.NewReplacer("/", "_"),
 		OutOfPackageMocksDirectory: outOfPackageMocksDirectory,
 	}
 }
@@ -35,7 +38,7 @@ func (g Generator) GenerateFromSchema(as parse.AstSchema) error {
 			continue
 		}
 
-		err := g.generateMockForNode(node)
+		err := g.generateMockForNode(as.ModulePath, node)
 		if err != nil {
 			return fmt.Errorf("g.generateMockForNode:%w", err)
 		}
@@ -43,11 +46,14 @@ func (g Generator) GenerateFromSchema(as parse.AstSchema) error {
 	return nil
 }
 
-func (g Generator) generateMockForNode(node *parse.Node) error {
+func (g Generator) generateMockForNode(path string, node *parse.Node) error {
 	funcs := make([]*types.Func, 0, len(node.Methods))
 	for i := range node.Methods {
 		funcs = append(funcs, node.Methods[i].TypFuc)
 	}
+	name := strings.TrimPrefix(node.PackageName+node.StructName, path)
+	name = strings.TrimPrefix(name, "/")
+	name = g.Replacer.Replace(name)
 	generator := pkg.NewGenerator(
 		context.Background(),
 		pkg.GeneratorConfig{
@@ -58,7 +64,7 @@ func (g Generator) generateMockForNode(node *parse.Node) error {
 			WithExpecter:         true,
 		},
 		&pkg.Interface{
-			Name:            node.PackageName + node.StructName,
+			Name:            name,
 			Pkg:             node.P.Types,
 			NamedType:       node.ActualNamedType,
 			ActualInterface: types.NewInterfaceType(funcs, nil),
@@ -71,7 +77,7 @@ func (g Generator) generateMockForNode(node *parse.Node) error {
 		return err
 	}
 
-	file, err := os.OpenFile(g.determineMockFilePath(node), os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.FileMode(0o644))
+	file, err := os.OpenFile(g.determineMockFilePath(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.FileMode(0o644))
 	if err != nil {
 		return err
 	}
@@ -84,6 +90,6 @@ func (g Generator) generateMockForNode(node *parse.Node) error {
 	return nil
 }
 
-func (g Generator) determineMockFilePath(node *parse.Node) string {
-	return filepath.Join(g.OutOfPackageMocksDirectory, node.PackageName+node.StructName+".go")
+func (g Generator) determineMockFilePath(node string) string {
+	return filepath.Join(g.OutOfPackageMocksDirectory, node+".go")
 }

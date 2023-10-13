@@ -17,12 +17,25 @@ func TestExtractExtDep(t *testing.T) {
 
 	require.Len(t, got, 1)
 
-	require.Contains(t, got, "ext_dep")
+	packageName := "testdata/ext_dep"
+	require.Contains(t, got, packageName)
 
-	require.Contains(t, got["ext_dep"], "A")
-	require.NotNil(t, got["ext_dep"]["A"].ActualNamedType)
-	require.Len(t, got["ext_dep"]["A"].Methods, 0)
-	require.Contains(t, got["ext_dep"]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "ext_dep", "a.go"))
+	require.Contains(t, got[packageName], "A")
+	require.NotNil(t, got[packageName]["A"].ActualNamedType)
+	require.Len(t, got[packageName]["A"].Methods, 0)
+	require.Contains(t, got[packageName]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "ext_dep", "a.go"))
+}
+
+func TestExtractPackageAlias(t *testing.T) {
+	t.Parallel()
+	pkgs, err := package_list.GetPackagesToParse("../testdata/package_alias", []string{config.VendorDir})
+	require.NoError(t, err)
+	got := Extract(pkgs)
+
+	require.Len(t, got, 3)
+	require.Contains(t, got, "testdata/package_alias/pa/a")
+	require.Contains(t, got, "testdata/package_alias/pb/a")
+	require.Contains(t, got, "testdata/package_alias")
 }
 
 func TestExtractInter(t *testing.T) {
@@ -33,42 +46,44 @@ func TestExtractInter(t *testing.T) {
 
 	require.Len(t, got, 2)
 
-	require.Contains(t, got, "pa")
-	require.Contains(t, got, "inter")
+	packageNamePa := "testdata/inter/pa"
+	require.Contains(t, got, packageNamePa)
+	packageNameInter := "testdata/inter"
+	require.Contains(t, got, packageNameInter)
 
-	require.Contains(t, got["pa"], "A")
+	require.Contains(t, got[packageNamePa], "A")
 
-	require.NotNil(t, got["pa"]["A"].ActualNamedType)
-	require.Len(t, got["pa"]["A"].Methods, 1)
-	require.Contains(t, got["pa"]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "pa", "a.go"))
-	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got["pa"]["A"].Methods[0].String())
+	require.NotNil(t, got[packageNamePa]["A"].ActualNamedType)
+	require.Len(t, got[packageNamePa]["A"].Methods, 1)
+	require.Contains(t, got[packageNamePa]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "pa", "a.go"))
+	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got[packageNamePa]["A"].Methods[0].String())
 
-	require.Contains(t, got["inter"], "A")
-	require.NotNil(t, got["inter"]["A"].ActualNamedType)
-	require.Len(t, got["inter"]["A"].Methods, 0)
-	require.Contains(t, got["inter"]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "a.go"))
+	require.Contains(t, got[packageNameInter], "A")
+	require.NotNil(t, got[packageNameInter]["A"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["A"].Methods, 0)
+	require.Contains(t, got[packageNameInter]["A"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "a.go"))
 
-	require.Contains(t, got["inter"], "B")
-	require.NotNil(t, got["inter"]["B"].Methods)
-	require.NotNil(t, got["inter"]["B"].ActualNamedType)
-	require.Len(t, got["inter"]["B"].Methods, 2)
-	require.Contains(t, got["inter"]["B"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "b.go"))
-	require.Equal(t, "FuncA()", got["inter"]["B"].Methods[0].String())
-	require.Equal(t, "FuncB()", got["inter"]["B"].Methods[1].String())
+	require.Contains(t, got[packageNameInter], "B")
+	require.NotNil(t, got[packageNameInter]["B"].Methods)
+	require.NotNil(t, got[packageNameInter]["B"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["B"].Methods, 2)
+	require.Contains(t, got[packageNameInter]["B"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "b.go"))
+	require.Equal(t, "FuncA()", got[packageNameInter]["B"].Methods[0].String())
+	require.Equal(t, "FuncB()", got[packageNameInter]["B"].Methods[1].String())
 
-	require.Contains(t, got["inter"], "C")
-	require.NotNil(t, got["inter"]["C"].Methods)
-	require.NotNil(t, got["inter"]["C"].ActualNamedType)
-	require.Len(t, got["inter"]["C"].Methods, 1)
-	require.Contains(t, got["inter"]["C"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "c.go"))
-	require.Equal(t, "FuncA()", got["inter"]["C"].Methods[0].String())
+	require.Contains(t, got[packageNameInter], "C")
+	require.NotNil(t, got[packageNameInter]["C"].Methods)
+	require.NotNil(t, got[packageNameInter]["C"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["C"].Methods, 1)
+	require.Contains(t, got[packageNameInter]["C"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "c.go"))
+	require.Equal(t, "FuncA()", got[packageNameInter]["C"].Methods[0].String())
 
-	require.Contains(t, got["inter"], "D")
-	require.NotNil(t, got["inter"]["D"].Methods)
-	require.NotNil(t, got["inter"]["D"].ActualNamedType)
-	require.Len(t, got["inter"]["D"].Methods, 1)
-	require.Contains(t, got["inter"]["D"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "d.go"))
-	require.Equal(t, "FuncA()", got["inter"]["D"].Methods[0].String())
+	require.Contains(t, got[packageNameInter], "D")
+	require.NotNil(t, got[packageNameInter]["D"].Methods)
+	require.NotNil(t, got[packageNameInter]["D"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["D"].Methods, 1)
+	require.Contains(t, got[packageNameInter]["D"].FilePath, filepath.Join("go-dependency-graph", "pkg", "parse", "testdata", "inter", "d.go"))
+	require.Equal(t, "FuncA()", got[packageNameInter]["D"].Methods[0].String())
 }
 
 func TestExtractNamedInter(t *testing.T) {
@@ -79,37 +94,39 @@ func TestExtractNamedInter(t *testing.T) {
 
 	require.Len(t, got, 2)
 
-	require.Contains(t, got, "pa")
-	require.Contains(t, got, "inter")
+	packageNamePa := "testdata/named_inter/pa"
+	require.Contains(t, got, packageNamePa)
+	packageNameInter := "testdata/named_inter"
+	require.Contains(t, got, packageNameInter)
 
-	require.Contains(t, got["pa"], "A")
+	require.Contains(t, got[packageNamePa], "A")
 
-	require.NotNil(t, got["pa"]["A"].ActualNamedType)
-	require.Len(t, got["pa"]["A"].Methods, 1)
-	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got["pa"]["A"].Methods[0].String())
+	require.NotNil(t, got[packageNamePa]["A"].ActualNamedType)
+	require.Len(t, got[packageNamePa]["A"].Methods, 1)
+	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got[packageNamePa]["A"].Methods[0].String())
 
-	require.Contains(t, got["inter"], "A")
-	require.NotNil(t, got["inter"]["A"].ActualNamedType)
-	require.Len(t, got["inter"]["A"].Methods, 0)
+	require.Contains(t, got[packageNameInter], "A")
+	require.NotNil(t, got[packageNameInter]["A"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["A"].Methods, 0)
 
-	require.Contains(t, got["inter"], "B")
-	require.NotNil(t, got["inter"]["B"].Methods)
-	require.NotNil(t, got["inter"]["B"].ActualNamedType)
-	require.Len(t, got["inter"]["B"].Methods, 2)
-	require.Equal(t, "FuncA()", got["inter"]["B"].Methods[0].String())
-	require.Equal(t, "FuncB()", got["inter"]["B"].Methods[1].String())
+	require.Contains(t, got[packageNameInter], "B")
+	require.NotNil(t, got[packageNameInter]["B"].Methods)
+	require.NotNil(t, got[packageNameInter]["B"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["B"].Methods, 2)
+	require.Equal(t, "FuncA()", got[packageNameInter]["B"].Methods[0].String())
+	require.Equal(t, "FuncB()", got[packageNameInter]["B"].Methods[1].String())
 
-	require.Contains(t, got["inter"], "C")
-	require.NotNil(t, got["inter"]["C"].Methods)
-	require.NotNil(t, got["inter"]["C"].ActualNamedType)
-	require.Len(t, got["inter"]["C"].Methods, 1)
-	require.Equal(t, "FuncA()", got["inter"]["C"].Methods[0].String())
+	require.Contains(t, got[packageNameInter], "C")
+	require.NotNil(t, got[packageNameInter]["C"].Methods)
+	require.NotNil(t, got[packageNameInter]["C"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["C"].Methods, 1)
+	require.Equal(t, "FuncA()", got[packageNameInter]["C"].Methods[0].String())
 
-	require.Contains(t, got["inter"], "D")
-	require.NotNil(t, got["inter"]["D"].Methods)
-	require.NotNil(t, got["inter"]["D"].ActualNamedType)
-	require.Len(t, got["inter"]["D"].Methods, 1)
-	require.Equal(t, "FuncA()", got["inter"]["D"].Methods[0].String())
+	require.Contains(t, got[packageNameInter], "D")
+	require.NotNil(t, got[packageNameInter]["D"].Methods)
+	require.NotNil(t, got[packageNameInter]["D"].ActualNamedType)
+	require.Len(t, got[packageNameInter]["D"].Methods, 1)
+	require.Equal(t, "FuncA()", got[packageNameInter]["D"].Methods[0].String())
 }
 
 func TestExtractFunc(t *testing.T) {
@@ -120,35 +137,37 @@ func TestExtractFunc(t *testing.T) {
 
 	require.Len(t, got, 2)
 
-	require.Contains(t, got, "pa")
-	require.Contains(t, got, "fn")
+	packageNamePa := "testdata/fn/pa"
+	require.Contains(t, got, packageNamePa)
+	packageNameFn := "testdata/fn"
+	require.Contains(t, got, packageNameFn)
 
-	require.Contains(t, got["pa"], "A")
+	require.Contains(t, got[packageNamePa], "A")
 
-	require.NotNil(t, got["pa"]["A"].ActualNamedType)
-	require.Len(t, got["pa"]["A"].Methods, 1)
-	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got["pa"]["A"].Methods[0].String())
+	require.NotNil(t, got[packageNamePa]["A"].ActualNamedType)
+	require.Len(t, got[packageNamePa]["A"].Methods, 1)
+	require.Equal(t, "FuncFoo(foo string) (bar int, err error)", got[packageNamePa]["A"].Methods[0].String())
 
-	require.Contains(t, got["fn"], "A")
-	require.NotNil(t, got["fn"]["A"].ActualNamedType)
-	require.Len(t, got["fn"]["A"].Methods, 0)
+	require.Contains(t, got[packageNameFn], "A")
+	require.NotNil(t, got[packageNameFn]["A"].ActualNamedType)
+	require.Len(t, got[packageNameFn]["A"].Methods, 0)
 
-	require.Contains(t, got["fn"], "B")
-	require.NotNil(t, got["fn"]["B"].Methods)
-	require.NotNil(t, got["fn"]["B"].ActualNamedType)
-	require.Len(t, got["fn"]["B"].Methods, 2)
-	require.Equal(t, "FuncA()", got["fn"]["B"].Methods[0].String())
-	require.Equal(t, "FuncB()", got["fn"]["B"].Methods[1].String())
+	require.Contains(t, got[packageNameFn], "B")
+	require.NotNil(t, got[packageNameFn]["B"].Methods)
+	require.NotNil(t, got[packageNameFn]["B"].ActualNamedType)
+	require.Len(t, got[packageNameFn]["B"].Methods, 2)
+	require.Equal(t, "FuncA()", got[packageNameFn]["B"].Methods[0].String())
+	require.Equal(t, "FuncB()", got[packageNameFn]["B"].Methods[1].String())
 
-	require.Contains(t, got["fn"], "C")
-	require.NotNil(t, got["fn"]["C"].Methods)
-	require.NotNil(t, got["fn"]["C"].ActualNamedType)
-	require.Len(t, got["fn"]["C"].Methods, 1)
-	require.Equal(t, "FuncA()", got["fn"]["C"].Methods[0].String())
+	require.Contains(t, got[packageNameFn], "C")
+	require.NotNil(t, got[packageNameFn]["C"].Methods)
+	require.NotNil(t, got[packageNameFn]["C"].ActualNamedType)
+	require.Len(t, got[packageNameFn]["C"].Methods, 1)
+	require.Equal(t, "FuncA()", got[packageNameFn]["C"].Methods[0].String())
 
-	require.Contains(t, got["fn"], "D")
-	require.NotNil(t, got["fn"]["D"].Methods)
-	require.NotNil(t, got["fn"]["D"].ActualNamedType)
-	require.Len(t, got["fn"]["D"].Methods, 1)
-	require.Equal(t, "FuncA()", got["fn"]["D"].Methods[0].String())
+	require.Contains(t, got[packageNameFn], "D")
+	require.NotNil(t, got[packageNameFn]["D"].Methods)
+	require.NotNil(t, got[packageNameFn]["D"].ActualNamedType)
+	require.Len(t, got[packageNameFn]["D"].Methods, 1)
+	require.Equal(t, "FuncA()", got[packageNameFn]["D"].Methods[0].String())
 }

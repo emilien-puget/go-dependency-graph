@@ -10,7 +10,21 @@ import (
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse/struct_decl"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestGenerateMermaidClassFromSchema_withParse(t *testing.T) {
+	as, err := parse.Parse("../testdata/named_inter", nil)
+	require.NoError(t, err)
+
+	file := &bytes.Buffer{}
+	buff := bufio.NewWriter(file)
+	err = NewGenerator().GenerateFromSchema(buff, as)
+	require.NoError(t, err)
+	buff.Flush()
+
+	assert.Equal(t, "classDiagram\n\nnamespace testdata_named_inter {\nclass `testdata/named_inter/A`\nclass `testdata/named_inter/B` {\nFuncA()\nFuncB()\n}\n\nclass `testdata/named_inter/C` {\nFuncA()\n}\n\nclass `testdata/named_inter/D` {\nFuncA()\n}\n\n}\nnamespace testdata_named_inter_pa {\nclass `testdata/named_inter/pa/A` {\nFuncFoo(foo string) (bar int, err error)\n}\n\n}\n`testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncA\n`testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncB\n`testdata/named_inter/A` ..> `testdata/named_inter/D`: FuncA\n`testdata/named_inter/B` ..> `testdata/named_inter/C`: FuncA\n`testdata/named_inter/D` ..> `testdata/named_inter/pa/A`: FuncFoo\n", file.String())
+}
 
 func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 	file := &bytes.Buffer{}
@@ -96,7 +110,7 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 	buff.Flush()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "classDiagram\n\nnamespace fn {\nclass `fn/A` {\n}\n\nclass `fn/B` {\nFuncA()\nFuncB()\n}\n\nclass `fn/C` {\nFuncA()\n}\n\nclass `fn/D` {\nFuncA()\n}\n\n}\nnamespace pa {\nclass `pa/A` {\nFuncFoo(foo string) (bar int, err error)\n}\n\n}\n`fn/A` ..> `fn/B`: FuncA\n`fn/A` ..> `fn/B`: FuncB\n`fn/A` ..> `fn/D`: FuncA\n`fn/B` ..> `fn/C`: FuncA\n`fn/D` ..> `pa/A`: FuncFoo\n", file.String())
+	assert.Equal(t, "classDiagram\n\nnamespace fn {\nclass `fn/A`\nclass `fn/B` {\nFuncA()\nFuncB()\n}\n\nclass `fn/C` {\nFuncA()\n}\n\nclass `fn/D` {\nFuncA()\n}\n\n}\nnamespace pa {\nclass `pa/A` {\nFuncFoo(foo string) (bar int, err error)\n}\n\n}\n`fn/A` ..> `fn/B`: FuncA\n`fn/A` ..> `fn/B`: FuncB\n`fn/A` ..> `fn/D`: FuncA\n`fn/B` ..> `fn/C`: FuncA\n`fn/D` ..> `pa/A`: FuncFoo\n", file.String())
 }
 
 func TestGenerateMermaidClassFromSchema_ext_dep(t *testing.T) {
@@ -131,7 +145,7 @@ func TestGenerateMermaidClassFromSchema_ext_dep(t *testing.T) {
 	buff.Flush()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "classDiagram\n\nnamespace ext_dep {\nclass `ext_dep/A` {\n}\n\n}\nnamespace net/http {\nclass `net/http/Client` {\n}\n\n}\n`ext_dep/A` ..> `net/http/Client`\n", file.String())
+	assert.Equal(t, "classDiagram\n\nnamespace ext_dep {\nclass `ext_dep/A`\n}\nnamespace net_http {\nclass `net/http/Client`\n}\n`ext_dep/A` ..> `net/http/Client`\n", file.String())
 }
 
 func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
@@ -218,7 +232,7 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 	buff.Flush()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "classDiagram\n\nnamespace inter {\nclass `inter/A` {\n}\n\nclass `inter/B` {\nFuncA()\nFuncB()\n}\n\nclass `inter/C` {\nFuncA()\n}\n\nclass `inter/D` {\nFuncA()\n}\n\n}\nnamespace pa {\nclass `pa/A` {\nFuncFoo(foo string) (bar int, err error)\n}\n\n}\n`inter/A` ..> `inter/B`: FuncA\n`inter/A` ..> `inter/B`: FuncB\n`inter/A` ..> `inter/D`: FuncA\n`inter/B` ..> `inter/C`: FuncA\n`inter/D` ..> `pa/A`: FuncFoo\n", file.String())
+	assert.Equal(t, "classDiagram\n\nnamespace inter {\nclass `inter/A`\nclass `inter/B` {\nFuncA()\nFuncB()\n}\n\nclass `inter/C` {\nFuncA()\n}\n\nclass `inter/D` {\nFuncA()\n}\n\n}\nnamespace pa {\nclass `pa/A` {\nFuncFoo(foo string) (bar int, err error)\n}\n\n}\n`inter/A` ..> `inter/B`: FuncA\n`inter/A` ..> `inter/B`: FuncB\n`inter/A` ..> `inter/D`: FuncA\n`inter/B` ..> `inter/C`: FuncA\n`inter/D` ..> `pa/A`: FuncFoo\n", file.String())
 }
 
 func TestGenerateMermaidClassFromSchema_package_name_mismatch(t *testing.T) {
@@ -247,5 +261,5 @@ func TestGenerateMermaidClassFromSchema_package_name_mismatch(t *testing.T) {
 	buff.Flush()
 	assert.NoError(t, err)
 
-	assert.Equal(t, "classDiagram\n\nnamespace gopkg.in/yaml.v3 {\nclass `gopkg.in/yaml.v3/Encoder` {\n}\n\n}\nnamespace package_name_mismatch {\nclass `package_name_mismatch/A` {\n}\n\n}\n`package_name_mismatch/A` ..> `gopkg.in/yaml.v3/Encoder`\n", file.String())
+	assert.Equal(t, "classDiagram\n\nnamespace gopkg_in_yaml_v3 {\nclass `gopkg.in/yaml.v3/Encoder`\n}\nnamespace package_name_mismatch {\nclass `package_name_mismatch/A`\n}\n`package_name_mismatch/A` ..> `gopkg.in/yaml.v3/Encoder`\n", file.String())
 }

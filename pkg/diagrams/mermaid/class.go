@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 
 	mymap "github.com/emilien-puget/go-dependency-graph/pkg/map"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
@@ -12,12 +13,17 @@ import (
 
 const (
 	packageSeparator = "/"
+	mermaidSeparator = "_"
 )
 
-type Generator struct{}
+type Generator struct {
+	replacer *strings.Replacer
+}
 
 func NewGenerator() *Generator {
-	return &Generator{}
+	return &Generator{
+		replacer: strings.NewReplacer(".", mermaidSeparator, "-", mermaidSeparator, "/", mermaidSeparator),
+	}
 }
 
 func (g Generator) GetDefaultResultFileName() string {
@@ -56,11 +62,14 @@ func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) e
 }
 
 func (g Generator) handlePackages(classBuf, relationBuf *bytes.Buffer, packageName string, services []*parse.Node, graph *parse.Graph) error {
-	_, err := fmt.Fprintf(classBuf, "\nnamespace %s {\n", packageName)
+	_, err := fmt.Fprintf(classBuf, "\nnamespace %s {\n", g.replacer.Replace(packageName))
 	if err != nil {
 		return err
 	}
 
+	sort.SliceStable(services, func(i, j int) bool {
+		return services[i].Name < services[j].Name
+	})
 	for i := range services {
 		err := g.handleService(classBuf, relationBuf, packageName, services[i].StructName, services[i], graph)
 		if err != nil {
@@ -74,15 +83,22 @@ func (g Generator) handlePackages(classBuf, relationBuf *bytes.Buffer, packageNa
 func (g Generator) handleService(classBuf, relationBuf *bytes.Buffer, packageName, serviceName string, service *parse.Node, graph *parse.Graph) error {
 	serviceFqdn := packageName + packageSeparator + serviceName
 
-	_, err := fmt.Fprintf(classBuf, "class `%s` {\n", serviceFqdn)
-	if err != nil {
-		return err
+	if len(service.Methods) == 0 {
+		_, err := fmt.Fprintf(classBuf, "class `%s`\n", serviceFqdn)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := fmt.Fprintf(classBuf, "class `%s` {\n", serviceFqdn)
+		if err != nil {
+			return err
+		}
+		for _, method := range service.Methods {
+			classBuf.WriteString(method.String())
+			classBuf.WriteString("\n")
+		}
+		classBuf.WriteString("}\n\n")
 	}
-	for _, method := range service.Methods {
-		classBuf.WriteString(method.String())
-		classBuf.WriteString("\n")
-	}
-	classBuf.WriteString("}\n\n")
 
 	for _, d := range graph.GetAdjacenciesSortedByName(service) {
 		err := g.handleDeps(d, relationBuf, serviceFqdn)
@@ -96,7 +112,7 @@ func (g Generator) handleService(classBuf, relationBuf *bytes.Buffer, packageNam
 func (g Generator) handleDeps(deps *parse.Adj, relationBuf *bytes.Buffer, serviceFqdn string) error {
 	s := deps.Node.PackageName + packageSeparator + deps.Node.StructName
 	if len(deps.Func) != 0 {
-		sort.Slice(deps.Func, func(i, j int) bool {
+		sort.SliceStable(deps.Func, func(i, j int) bool {
 			return deps.Func[i] < deps.Func[j]
 		})
 		for _, fn := range deps.Func {

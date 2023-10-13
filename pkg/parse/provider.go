@@ -66,6 +66,8 @@ func searchDependencies(funcdecl *ast.FuncDecl, name string, imports map[string]
 		external := imp.External
 		if packageName == "" {
 			packageName = name
+		} else {
+			packageName = imp.Path
 		}
 		varName := ""
 		for _, name := range param.Names {

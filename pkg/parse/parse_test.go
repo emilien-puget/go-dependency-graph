@@ -33,6 +33,49 @@ func TestParse_error(t *testing.T) {
 	}
 }
 
+func TestParse_package_alias(t *testing.T) {
+	t.Parallel()
+	parse, err := Parse("testdata/package_alias", nil)
+	assert.NoError(t, err)
+
+	graph := NewGraph()
+	PaaA := &Node{
+		Name:        "testdata/package_alias/pa/a.A",
+		PackageName: "testdata/package_alias/pa/a",
+		StructName:  "A",
+		Doc:         "A pa struct.",
+		External:    false,
+	}
+	graph.AddNode(PaaA)
+	pbaA := &Node{
+		Name:        "testdata/package_alias/pb/a.A",
+		PackageName: "testdata/package_alias/pb/a",
+		StructName:  "A",
+		Doc:         "A pa struct.",
+		External:    false,
+	}
+	graph.AddNode(pbaA)
+	pbaB := &Node{
+		Name:        "testdata/package_alias/pb/a.B",
+		PackageName: "testdata/package_alias/pb/a",
+		StructName:  "B",
+		Doc:         "B pa struct.",
+		External:    false,
+	}
+	graph.AddNode(pbaB)
+	a := &Node{
+		Name:        "testdata/package_alias.A",
+		PackageName: "testdata/package_alias",
+		StructName:  "A",
+		External:    false,
+	}
+	graph.AddNode(a)
+	graph.AddEdge(a, &Adj{Node: PaaA})
+	graph.AddEdge(a, &Adj{Node: pbaA})
+	graph.AddEdge(pbaB, &Adj{Node: pbaA})
+	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
+}
+
 func TestParse_ext_dep(t *testing.T) {
 	t.Parallel()
 	parse, err := Parse("testdata/ext_dep", nil)
@@ -40,8 +83,8 @@ func TestParse_ext_dep(t *testing.T) {
 
 	graph := NewGraph()
 	extA := &Node{
-		Name:        "ext_dep.A",
-		PackageName: "ext_dep",
+		Name:        "testdata/ext_dep.A",
+		PackageName: "testdata/ext_dep",
 		StructName:  "A",
 		External:    false,
 	}
@@ -61,8 +104,8 @@ func TestParse_ext_dep(t *testing.T) {
 	})
 	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	require.NotNil(t, parse.Graph.GetNodeByName("ext_dep.A").ActualNamedType)
-	require.NotNil(t, parse.Graph.GetNodeByName("ext_dep.A").P)
+	require.NotNil(t, parse.Graph.GetNodeByName("testdata/ext_dep.A").ActualNamedType)
+	require.NotNil(t, parse.Graph.GetNodeByName("testdata/ext_dep.A").P)
 
 	require.Nil(t, parse.Graph.GetNodeByName("net/http.Client").ActualNamedType)
 	require.Nil(t, parse.Graph.GetNodeByName("net/http.Client").P)
@@ -75,14 +118,14 @@ func TestParse_fn(t *testing.T) {
 
 	graph := NewGraph()
 	fnA := &Node{
-		Name:        "fn.A",
-		PackageName: "fn",
+		Name:        "testdata/fn.A",
+		PackageName: "testdata/fn",
 		StructName:  "A",
 	}
 	graph.AddNode(fnA)
 	fnB := &Node{
-		Name:        "fn.B",
-		PackageName: "fn",
+		Name:        "testdata/fn.B",
+		PackageName: "testdata/fn",
 		StructName:  "B",
 		Methods: []struct_decl.Method{
 			{
@@ -95,8 +138,8 @@ func TestParse_fn(t *testing.T) {
 	}
 	graph.AddNode(fnB)
 	fnC := &Node{
-		Name:        "fn.C",
-		PackageName: "fn",
+		Name:        "testdata/fn.C",
+		PackageName: "testdata/fn",
 		StructName:  "C",
 		Methods: []struct_decl.Method{
 			{
@@ -106,8 +149,8 @@ func TestParse_fn(t *testing.T) {
 	}
 	graph.AddNode(fnC)
 	fnD := &Node{
-		Name:        "fn.D",
-		PackageName: "fn",
+		Name:        "testdata/fn.D",
+		PackageName: "testdata/fn",
 		StructName:  "D",
 		Methods: []struct_decl.Method{
 			{
@@ -117,8 +160,8 @@ func TestParse_fn(t *testing.T) {
 	}
 	graph.AddNode(fnD)
 	paA := &Node{
-		Name:        "pa.A",
-		PackageName: "pa",
+		Name:        "testdata/fn/pa.A",
+		PackageName: "testdata/fn/pa",
 		StructName:  "A",
 		Methods: []struct_decl.Method{
 			{
@@ -150,11 +193,11 @@ func TestParse_fn(t *testing.T) {
 
 	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.A")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.B")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.C")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("fn.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("fn.D")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/fn.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/fn.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/fn.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/fn.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/fn.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/fn.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/fn.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/fn.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/fn/pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/fn/pa.A")))
 }
 
 func TestParse_named_inter(t *testing.T) {
@@ -164,14 +207,14 @@ func TestParse_named_inter(t *testing.T) {
 
 	graph := NewGraph()
 	interA := &Node{
-		Name:        "inter.A",
-		PackageName: "inter",
+		Name:        "testdata/named_inter.A",
+		PackageName: "testdata/named_inter",
 		StructName:  "A",
 	}
 	graph.AddNode(interA)
 	interB := &Node{
-		Name:        "inter.B",
-		PackageName: "inter",
+		Name:        "testdata/named_inter.B",
+		PackageName: "testdata/named_inter",
 		StructName:  "B",
 		Methods: []struct_decl.Method{
 			{
@@ -183,8 +226,8 @@ func TestParse_named_inter(t *testing.T) {
 	}
 	graph.AddNode(interB)
 	interC := &Node{
-		Name:        "inter.C",
-		PackageName: "inter",
+		Name:        "testdata/named_inter.C",
+		PackageName: "testdata/named_inter",
 		StructName:  "C",
 		Methods: []struct_decl.Method{
 			{
@@ -194,8 +237,8 @@ func TestParse_named_inter(t *testing.T) {
 	}
 	graph.AddNode(interC)
 	interD := &Node{
-		Name:        "inter.D",
-		PackageName: "inter",
+		Name:        "testdata/named_inter.D",
+		PackageName: "testdata/named_inter",
 		StructName:  "D",
 		Methods: []struct_decl.Method{
 			{
@@ -205,8 +248,8 @@ func TestParse_named_inter(t *testing.T) {
 	}
 	graph.AddNode(interD)
 	paA := &Node{
-		Name:        "pa.A",
-		PackageName: "pa",
+		Name:        "testdata/named_inter/pa.A",
+		PackageName: "testdata/named_inter/pa",
 		StructName:  "A",
 		Methods: []struct_decl.Method{
 			{
@@ -238,11 +281,11 @@ func TestParse_named_inter(t *testing.T) {
 
 	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/named_inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/named_inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/named_inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/named_inter.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/named_inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/named_inter.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/named_inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/named_inter.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/named_inter/pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/named_inter/pa.A")))
 }
 
 func TestParse_inter(t *testing.T) {
@@ -252,14 +295,14 @@ func TestParse_inter(t *testing.T) {
 
 	graph := NewGraph()
 	interA := &Node{
-		Name:        "inter.A",
-		PackageName: "inter",
+		Name:        "testdata/inter.A",
+		PackageName: "testdata/inter",
 		StructName:  "A",
 	}
 	graph.AddNode(interA)
 	interB := &Node{
-		Name:        "inter.B",
-		PackageName: "inter",
+		Name:        "testdata/inter.B",
+		PackageName: "testdata/inter",
 		StructName:  "B",
 		Methods: []struct_decl.Method{
 			{
@@ -272,8 +315,8 @@ func TestParse_inter(t *testing.T) {
 	}
 	graph.AddNode(interB)
 	interC := &Node{
-		Name:        "inter.C",
-		PackageName: "inter",
+		Name:        "testdata/inter.C",
+		PackageName: "testdata/inter",
 		StructName:  "C",
 		Methods: []struct_decl.Method{
 			{
@@ -283,8 +326,8 @@ func TestParse_inter(t *testing.T) {
 	}
 	graph.AddNode(interC)
 	interD := &Node{
-		Name:        "inter.D",
-		PackageName: "inter",
+		Name:        "testdata/inter.D",
+		PackageName: "testdata/inter",
 		StructName:  "D",
 		Methods: []struct_decl.Method{
 			{
@@ -294,8 +337,8 @@ func TestParse_inter(t *testing.T) {
 	}
 	graph.AddNode(interD)
 	paA := &Node{
-		Name:        "pa.A",
-		PackageName: "pa",
+		Name:        "testdata/inter/pa.A",
+		PackageName: "testdata/inter/pa",
 		StructName:  "A",
 		Methods: []struct_decl.Method{
 			{
@@ -327,12 +370,12 @@ func TestParse_inter(t *testing.T) {
 
 	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
 
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.A")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.B")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.C")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("inter.D")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("pa.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter.A")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter.B")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter.B")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter.C")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter.C")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter.D")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter.D")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/inter/pa.A")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/inter/pa.A")))
 }
 
 func TestParse_wire_sample(t *testing.T) {
@@ -343,15 +386,15 @@ func TestParse_wire_sample(t *testing.T) {
 
 	graph := NewGraph()
 	mainGreeter := &Node{
-		Name:        "main.Greeter",
-		PackageName: "main",
+		Name:        "testdata/wire_sample.Greeter",
+		PackageName: "testdata/wire_sample",
 		StructName:  "Greeter",
 		Doc:         "Greeter is the type charged with greeting guests.",
 	}
 	graph.AddNode(mainGreeter)
 	mainEvent := &Node{
-		Name:        "main.Event",
-		PackageName: "main",
+		Name:        "testdata/wire_sample.Event",
+		PackageName: "testdata/wire_sample",
 		StructName:  "Event",
 		Doc:         "Event is a gathering with greeters.",
 	}
@@ -359,8 +402,8 @@ func TestParse_wire_sample(t *testing.T) {
 	graph.AddEdge(mainEvent, &Adj{Node: mainGreeter})
 
 	assertNodes(t, graph.GetNodesSortedByName(), parse.Graph.GetNodesSortedByName())
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("main.Greeter")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("main.Greeter")))
-	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("main.Event")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("main.Event")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/wire_sample.Greeter")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/wire_sample.Greeter")))
+	assertAdj(t, graph.GetAdjacenciesSortedByName(graph.GetNodeByName("testdata/wire_sample.Event")), parse.Graph.GetAdjacenciesSortedByName(parse.Graph.GetNodeByName("testdata/wire_sample.Event")))
 }
 
 func TestParse_package_name_mismatch(t *testing.T) {
@@ -370,8 +413,8 @@ func TestParse_package_name_mismatch(t *testing.T) {
 
 	graph := NewGraph()
 	mainGreeter := &Node{
-		Name:        "package_name_mismatch.A",
-		PackageName: "package_name_mismatch",
+		Name:        "testdata/package_name_mismatch.A",
+		PackageName: "testdata/package_name_mismatch",
 		StructName:  "A",
 	}
 	graph.AddNode(mainGreeter)
