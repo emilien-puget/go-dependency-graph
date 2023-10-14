@@ -2,6 +2,7 @@ package diagrams
 
 import (
 	"bufio"
+	"context"
 	"errors"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/diagrams/c4"
@@ -10,7 +11,7 @@ import (
 )
 
 type Generator interface {
-	GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) error
+	GenerateFromSchema(ctx context.Context, writer *bufio.Writer, s parse.AstSchema) error
 	GetDefaultResultFileName() string
 }
 

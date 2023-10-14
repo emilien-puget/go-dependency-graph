@@ -3,6 +3,7 @@ package mermaid
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -31,7 +32,7 @@ func (g Generator) GetDefaultResultFileName() string {
 }
 
 // GenerateFromSchema generates a class diagram for mermaid.
-func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
+func (g Generator) GenerateFromSchema(ctx context.Context, writer *bufio.Writer, s parse.AstSchema) error {
 	_, err := writer.WriteString("classDiagram\n")
 	if err != nil {
 		return err
@@ -41,6 +42,11 @@ func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) e
 	var relationBuf bytes.Buffer
 
 	for _, k := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		err := g.handlePackages(&classBuf, &relationBuf, k, s.Graph.NodesByPackage[k], s.Graph)
 		if err != nil {
 			return err

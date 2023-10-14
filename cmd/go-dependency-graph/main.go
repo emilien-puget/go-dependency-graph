@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -14,10 +15,13 @@ import (
 	mocksconfig "github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
 	"github.com/emilien-puget/go-dependency-graph/pkg/parse"
 	"github.com/emilien-puget/go-dependency-graph/pkg/writer"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
 	project := flag.String("project", "", "the path of the project to inspect, default is current dir")
+	diagEnable := flag.Bool("generate-diag", true, "enable diagram generation, default is true")
+	mocksEnable := flag.Bool("generate-mocks", true, "enable mocks generation, default is true")
 	diagResult := flag.String("diag-result", "", "the path of the generated file, not used if stdout is piped, default is in the project dir")
 	diagGenerator := flag.String("diag-generator", "c4_plantuml_component", "the name of the generator to use, [c4_plantuml_component, mermaid_class], default c4_plantuml_component")
 	mockGenerator := flag.String("mock-generator", "mockery", "the name of the generator to use, [mockery], default mockery")
@@ -25,7 +29,7 @@ func main() {
 	skipFolders := flag.String("skip-dirs", mocksconfig.DefaultOutOfPackageDirectory+","+config.VendorDir, "a comma separate list of directory to ignore, default value is the mocks and vendor directory")
 	flag.Parse()
 
-	err := run(project, diagResult, diagGenerator, mockGenerator, mockResult, skipFolders)
+	err := run(project, diagEnable, mocksEnable, diagResult, diagGenerator, mockGenerator, mockResult, skipFolders)
 	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -38,38 +42,61 @@ var (
 	errMissingMockResult       = errors.New("mock-result is required")
 )
 
-func run(project, diagResult, diagGeneratorType, mockGeneratorType, mockResult, skipFolders *string) error {
-	err := validateRequiredInput(diagGeneratorType, mockGeneratorType, mockResult)
+func run(project *string, diagEnable, mocksEnable *bool, diagResult, diagGeneratorType, mockGeneratorType, mockResult, skipFolders *string) error {
+	err := validateRequiredInput(diagEnable, mocksEnable, diagGeneratorType, mockGeneratorType, mockResult)
 	if err != nil {
-		return fmt.Errorf("validateRequiredInput:%w", err)
+		return fmt.Errorf("validateRequiredInput: %w", err)
 	}
 
 	if project == nil || *project == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("os.Getwd:%w", err)
+			return fmt.Errorf("os.Getwd: %w", err)
 		}
 		project = &dir
 	}
 
 	as, err := getAst(project, skipFolders)
 	if err != nil {
-		return fmt.Errorf("getAst:%w", err)
+		return fmt.Errorf("getAst: %w", err)
 	}
 
-	err = generateDiag(project, diagResult, diagGeneratorType, as)
+	err = runGenerators(as, project, diagEnable, mocksEnable, diagResult, diagGeneratorType, mockGeneratorType, mockResult)
 	if err != nil {
-		return fmt.Errorf("generateDiag:%w", err)
-	}
-
-	err = generateMock(project, mockResult, mockGeneratorType, as)
-	if err != nil {
-		return fmt.Errorf("generateMock:%w", err)
+		return fmt.Errorf("runGenerators: %w", err)
 	}
 	return nil
 }
 
-func generateDiag(project, diagResult, diagGeneratorType *string, as parse.AstSchema) error {
+func runGenerators(as parse.AstSchema, project *string, diagEnable, mocksEnable *bool, diagResult, diagGeneratorType, mockGeneratorType, mockResult *string) (err error) {
+	group, ctx := errgroup.WithContext(context.Background())
+	if *diagEnable {
+		group.Go(func() error {
+			err = generateDiag(ctx, project, diagResult, diagGeneratorType, as)
+			if err != nil {
+				return fmt.Errorf("generateDiag: %w", err)
+			}
+			return nil
+		})
+	}
+
+	if *mocksEnable {
+		group.Go(func() error {
+			err = generateMock(ctx, project, mockResult, mockGeneratorType, as)
+			if err != nil {
+				return fmt.Errorf("generateMock: %w", err)
+			}
+			return nil
+		})
+	}
+	err = group.Wait()
+	if err != nil {
+		return fmt.Errorf("group wait: %w", err)
+	}
+	return nil
+}
+
+func generateDiag(ctx context.Context, project, diagResult, diagGeneratorType *string, as parse.AstSchema) error {
 	diagGenerator, err := diagrams.GetGenerator(*diagGeneratorType)
 	if err != nil {
 		return fmt.Errorf("diagrams.GetGenerator:%w", err)
@@ -85,14 +112,14 @@ func generateDiag(project, diagResult, diagGeneratorType *string, as parse.AstSc
 	}
 	defer closer()
 
-	err = diagGenerator.GenerateFromSchema(w, as)
+	err = diagGenerator.GenerateFromSchema(ctx, w, as)
 	if err != nil {
 		return fmt.Errorf("diagGenerator.GenerateFromSchema:%w", err)
 	}
 	return nil
 }
 
-func generateMock(project, mockResult, mockGeneratorType *string, as parse.AstSchema) error {
+func generateMock(ctx context.Context, project, mockResult, mockGeneratorType *string, as parse.AstSchema) error {
 	c := mocksconfig.Config{
 		OutOfPackageMocksDirectory: filepath.Join(*project, *mockResult),
 	}
@@ -101,22 +128,26 @@ func generateMock(project, mockResult, mockGeneratorType *string, as parse.AstSc
 	if err != nil {
 		return fmt.Errorf("mocks.GetGenerator:%w", err)
 	}
-	err = mockGenerator.GenerateFromSchema(as)
+	err = mockGenerator.GenerateFromSchema(ctx, as)
 	if err != nil {
 		return fmt.Errorf("mockGenerator.GenerateFromSchema:%w", err)
 	}
 	return nil
 }
 
-func validateRequiredInput(diagGeneratorType, mockGeneratorType, mockResult *string) error {
-	if diagGeneratorType == nil || *diagGeneratorType == "" {
-		return errMissingDiagramGenerator
+func validateRequiredInput(diagEnable, mocksEnable *bool, diagGeneratorType, mockGeneratorType, mockResult *string) error {
+	if *diagEnable {
+		if diagGeneratorType == nil || *diagGeneratorType == "" {
+			return errMissingDiagramGenerator
+		}
+		if mockGeneratorType == nil || *mockGeneratorType == "" {
+			return errMissingMockGenerator
+		}
 	}
-	if mockGeneratorType == nil || *mockGeneratorType == "" {
-		return errMissingMockGenerator
-	}
-	if mockResult == nil || *mockResult == "" {
-		return errMissingMockResult
+	if *mocksEnable {
+		if mockResult == nil || *mockResult == "" {
+			return errMissingMockResult
+		}
 	}
 	return nil
 }
