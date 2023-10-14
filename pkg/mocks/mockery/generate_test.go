@@ -2,6 +2,7 @@ package mockery
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ func TestGenerateFromSchema_outofpackage(t *testing.T) {
 	require.NoError(t, err)
 
 	dir := t.TempDir()
-	err = NewGenerator(dir).GenerateFromSchema(nil, as)
+	err = NewGenerator(dir).GenerateFromSchema(context.Background(), as)
 	require.NoError(t, err)
 
 	assertDirectoriesEqual(t, dir, "testdata/expect_named_inter/out_of_package")

@@ -42,27 +42,35 @@ var (
 	errMissingMockResult       = errors.New("mock-result is required")
 )
 
-func run(project *string, diag, mocks *bool, diagResult, diagGeneratorType, mockGeneratorType, mockResult, skipFolders *string) error {
-	err := validateRequiredInput(diag, mocks, diagGeneratorType, mockGeneratorType, mockResult)
+func run(project *string, diagEnable, mocksEnable *bool, diagResult, diagGeneratorType, mockGeneratorType, mockResult, skipFolders *string) error {
+	err := validateRequiredInput(diagEnable, mocksEnable, diagGeneratorType, mockGeneratorType, mockResult)
 	if err != nil {
-		return fmt.Errorf("validateRequiredInput:%w", err)
+		return fmt.Errorf("validateRequiredInput: %w", err)
 	}
 
 	if project == nil || *project == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("os.Getwd:%w", err)
+			return fmt.Errorf("os.Getwd: %w", err)
 		}
 		project = &dir
 	}
 
 	as, err := getAst(project, skipFolders)
 	if err != nil {
-		return fmt.Errorf("getAst:%w", err)
+		return fmt.Errorf("getAst: %w", err)
 	}
 
+	err = runGenerators(as, project, diagEnable, mocksEnable, diagResult, diagGeneratorType, mockGeneratorType, mockResult)
+	if err != nil {
+		return fmt.Errorf("runGenerators: %w", err)
+	}
+	return nil
+}
+
+func runGenerators(as parse.AstSchema, project *string, diagEnable, mocksEnable *bool, diagResult, diagGeneratorType, mockGeneratorType, mockResult *string) (err error) {
 	group, ctx := errgroup.WithContext(context.Background())
-	if *diag {
+	if *diagEnable {
 		group.Go(func() error {
 			err = generateDiag(ctx, project, diagResult, diagGeneratorType, as)
 			if err != nil {
@@ -72,7 +80,7 @@ func run(project *string, diag, mocks *bool, diagResult, diagGeneratorType, mock
 		})
 	}
 
-	if *mocks {
+	if *mocksEnable {
 		group.Go(func() error {
 			err = generateMock(ctx, project, mockResult, mockGeneratorType, as)
 			if err != nil {
@@ -127,8 +135,8 @@ func generateMock(ctx context.Context, project, mockResult, mockGeneratorType *s
 	return nil
 }
 
-func validateRequiredInput(diag, mocks *bool, diagGeneratorType, mockGeneratorType, mockResult *string) error {
-	if *diag {
+func validateRequiredInput(diagEnable, mocksEnable *bool, diagGeneratorType, mockGeneratorType, mockResult *string) error {
+	if *diagEnable {
 		if diagGeneratorType == nil || *diagGeneratorType == "" {
 			return errMissingDiagramGenerator
 		}
@@ -136,7 +144,7 @@ func validateRequiredInput(diag, mocks *bool, diagGeneratorType, mockGeneratorTy
 			return errMissingMockGenerator
 		}
 	}
-	if *mocks {
+	if *mocksEnable {
 		if mockResult == nil || *mockResult == "" {
 			return errMissingMockResult
 		}

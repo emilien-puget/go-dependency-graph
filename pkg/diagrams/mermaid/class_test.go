@@ -3,6 +3,7 @@ package mermaid
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"go/token"
 	"go/types"
 	"testing"
@@ -19,7 +20,7 @@ func TestGenerateMermaidClassFromSchema_withParse(t *testing.T) {
 
 	file := &bytes.Buffer{}
 	buff := bufio.NewWriter(file)
-	err = NewGenerator().GenerateFromSchema(buff, as)
+	err = NewGenerator().GenerateFromSchema(context.Background(), buff, as)
 	require.NoError(t, err)
 	buff.Flush()
 
@@ -103,7 +104,7 @@ func TestGenerateMermaidClassFromSchema_fn(t *testing.T) {
 	graph.AddEdge(fnA, &parse.Adj{Node: fnD, Func: []string{"FuncA"}})
 	graph.AddEdge(fnB, &parse.Adj{Node: fnC, Func: []string{"FuncA"}})
 	graph.AddEdge(fnD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
-	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(context.Background(), buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Graph:      graph,
 	})
@@ -138,7 +139,7 @@ func TestGenerateMermaidClassFromSchema_ext_dep(t *testing.T) {
 		Node: node,
 		Func: nil,
 	})
-	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(context.Background(), buff, parse.AstSchema{
 		ModulePath: "testdata/ext_dep",
 		Graph:      graph,
 	})
@@ -225,7 +226,7 @@ func TestGenerateMermaidClassFromSchema_inter(t *testing.T) {
 	graph.AddEdge(interA, &parse.Adj{Node: interD, Func: []string{"FuncA"}})
 	graph.AddEdge(interB, &parse.Adj{Node: interC, Func: []string{"FuncA"}})
 	graph.AddEdge(interD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
-	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(context.Background(), buff, parse.AstSchema{
 		ModulePath: "testdata/inter",
 		Graph:      graph,
 	})
@@ -254,7 +255,7 @@ func TestGenerateMermaidClassFromSchema_package_name_mismatch(t *testing.T) {
 	}
 	graph.AddNode(mainEvent)
 	graph.AddEdge(mainGreeter, &parse.Adj{Node: mainEvent})
-	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(context.Background(), buff, parse.AstSchema{
 		ModulePath: "testdata/package_name_mismatch",
 		Graph:      graph,
 	})

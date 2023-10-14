@@ -43,7 +43,7 @@ func (g Generator) GenerateFromSchema(ctx context.Context, as parse.AstSchema) e
 			continue
 		}
 
-		err := g.generateMockForNode(as.ModulePath, node)
+		err := g.generateMockForNode(ctx, as.ModulePath, node)
 		if err != nil {
 			return fmt.Errorf("g.generateMockForNode:%w", err)
 		}
@@ -51,7 +51,7 @@ func (g Generator) GenerateFromSchema(ctx context.Context, as parse.AstSchema) e
 	return nil
 }
 
-func (g Generator) generateMockForNode(path string, node *parse.Node) error {
+func (g Generator) generateMockForNode(ctx context.Context, path string, node *parse.Node) error {
 	funcs := make([]*types.Func, 0, len(node.Methods))
 	for i := range node.Methods {
 		funcs = append(funcs, node.Methods[i].TypFuc)
@@ -60,7 +60,7 @@ func (g Generator) generateMockForNode(path string, node *parse.Node) error {
 	name = strings.TrimPrefix(name, "/")
 	name = g.Replacer.Replace(name)
 	generator := pkg.NewGenerator(
-		context.Background(),
+		ctx,
 		pkg.GeneratorConfig{
 			DisableVersionString: true,
 			Exported:             true,
@@ -77,7 +77,7 @@ func (g Generator) generateMockForNode(path string, node *parse.Node) error {
 		"mocks",
 	)
 
-	err := generator.GenerateAll(context.Background())
+	err := generator.GenerateAll(ctx)
 	if err != nil {
 		return err
 	}

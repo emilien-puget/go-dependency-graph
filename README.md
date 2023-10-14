@@ -1,5 +1,9 @@
 # go-dependency-graph
 
+
+[![codecov](https://codecov.io/gh/emilien-puget/go-dependency-graph/graph/badge.svg?token=LFSZU2VJM7)](https://codecov.io/gh/emilien-puget/go-dependency-graph)
+[![Test and coverage](https://github.com/emilien-puget/go-dependency-graph/actions/workflows/codecov.yml/badge.svg)](https://github.com/emilien-puget/go-dependency-graph/actions/workflows/codecov.yml)
+
 A tool to build dependency graph for go programs based on dependency injection functions.
 
 # Install
