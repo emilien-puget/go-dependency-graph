@@ -2,6 +2,7 @@ package c4
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -27,7 +28,7 @@ func (g Generator) GetDefaultResultFileName() string {
 }
 
 // GenerateFromSchema generates a C4 plantuml component.
-func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) error {
+func (g Generator) GenerateFromSchema(ctx context.Context, writer *bufio.Writer, s parse.AstSchema) error {
 	_, err := writer.WriteString("@startuml\n!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml\n")
 	if err != nil {
 		return err
@@ -41,6 +42,11 @@ func (g Generator) GenerateFromSchema(writer *bufio.Writer, s parse.AstSchema) e
 	externalRelations := make(map[string]string)
 
 	for _, packageName := range mymap.OrderedKeys(s.Graph.NodesByPackage) {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		rel, err := g.handlePackages(writer, packageName, s.Graph.NodesByPackage[packageName], externalRelations, s.Graph, s.ModulePath)
 		if err != nil {
 			return err

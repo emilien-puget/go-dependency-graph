@@ -24,12 +24,17 @@ func NewGenerator(outOfPackageMocksDirectory string) *Generator {
 	}
 }
 
-func (g Generator) GenerateFromSchema(as parse.AstSchema) error {
+func (g Generator) GenerateFromSchema(ctx context.Context, as parse.AstSchema) error {
 	err := os.MkdirAll(g.OutOfPackageMocksDirectory, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("os.MkdirAll:%w", err)
 	}
 	for _, node := range as.Graph.TopologicalSort() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		if len(node.InboundEdges) == 0 {
 			continue
 		}

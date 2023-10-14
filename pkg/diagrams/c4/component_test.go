@@ -129,7 +129,7 @@ func TestGenerateUmlFileFromSchema(t *testing.T) {
 	graph.AddEdge(fnB, &parse.Adj{Node: fnC, Func: []string{"FuncA"}})
 	graph.AddEdge(fnD, &parse.Adj{Node: paA, Func: []string{"FuncFoo"}})
 
-	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
 		ModulePath: "testdata/fn",
 		Graph:      graph,
 	})
@@ -188,7 +188,7 @@ func TestGenerateUmlFileFromSchema_ext_dep(t *testing.T) {
 		Node: node,
 		Func: nil,
 	})
-	err := NewGenerator().GenerateFromSchema(buff, parse.AstSchema{
+	err := NewGenerator().GenerateFromSchema(nil, buff, parse.AstSchema{
 		ModulePath: "testdata/ext_dep",
 		Graph:      graph,
 	})

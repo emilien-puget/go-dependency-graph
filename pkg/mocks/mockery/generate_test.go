@@ -18,7 +18,7 @@ func TestGenerateFromSchema_outofpackage(t *testing.T) {
 	require.NoError(t, err)
 
 	dir := t.TempDir()
-	err = NewGenerator(dir).GenerateFromSchema(as)
+	err = NewGenerator(dir).GenerateFromSchema(nil, as)
 	require.NoError(t, err)
 
 	assertDirectoriesEqual(t, dir, "testdata/expect_named_inter/out_of_package")

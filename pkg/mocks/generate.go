@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"errors"
 
 	"github.com/emilien-puget/go-dependency-graph/pkg/mocks/config"
@@ -13,7 +14,7 @@ const (
 )
 
 type Generator interface {
-	GenerateFromSchema(as parse.AstSchema) error
+	GenerateFromSchema(ctx context.Context, as parse.AstSchema) error
 }
 
 var errUnknownGenerator = errors.New("unknown generator")

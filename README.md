@@ -7,10 +7,40 @@ A tool to build dependency graph for go programs based on dependency injection f
 ```
 go install github.com/emilien-puget/go-dependency-graph/cmd/go-dependency-graph@latest
 ```
-# Note regarding mermaid
 
-GitHub doesn't support the namespace feature of the mermaidjs class diagram, you can use the
-cli https://github.com/mermaid-js/mermaid-cli to generate a svg/png/pdf file.
+# How to Use
+
+You can customize the behavior of the tool using these parameters:
+
+`--generate-diag=false`: Disable diagram generation.
+`--generate-mocks=false`: Disable mocks generation.
+`--project=<path to project>`: the targeted project, default is current directory.
+
+## Diagrams
+
+`go-dependency-graph --project=<path to project> --diag-result=<result file> --diag-generator=<generator>`
+
+Available generators include:
+
+- `c4_plantuml_component`, default, a components diagrams
+  using [c4 plantuml](https://github.com/plantuml-stdlib/C4-PlantUML)
+- `mermaid_class`, a class diagram
+  using [mermaid](https://mermaid-js.github.io/mermaid/#/classDiagram?id=class-diagrams)
+
+### Note regarding mermaid
+
+Please note that GitHub does not support the namespace feature of MermaidJS class diagrams.
+You can use the [mermaid cli](https://github.com/mermaid-js/mermaid-cli) to generate SVG, PNG, or PDF files.
+
+## Mocks
+
+`go-dependency-graph --project=<path to project> --mock-result=<result directory> --mock-generator=<generator>`
+
+mock-result default value is the `mocks` directory at the root of the project dir.
+
+Available generators include:
+
+- `mockery`, default, [mockery](https://github.com/mockery/mockery)
 
 # Example
 
@@ -52,60 +82,31 @@ Rel("D", "pa_A", "FuncFoo")
 
 ```mermaid
 classDiagram
+    namespace testdata_named_inter {
+        class `testdata/named_inter/A`
+        class `testdata/named_inter/B` {
+            FuncA()
+            FuncB()
+        }
 
-  namespace testdata_named_inter {
-    class `testdata/named_inter/A`
-    class `testdata/named_inter/B` {
-      FuncA()
-      FuncB()
+        class `testdata/named_inter/C` {
+            FuncA()
+        }
+
+        class `testdata/named_inter/D` {
+            FuncA()
+        }
     }
-
-    class `testdata/named_inter/C` {
-      FuncA()
+    namespace testdata_named_inter_pa {
+        class `testdata/named_inter/pa/A` {
+            FuncFoo(foo string)(bar int, err error)
+        }
     }
-
-    class `testdata/named_inter/D` {
-      FuncA()
-    }
-
-  }
-  namespace testdata_named_inter_pa {
-    class `testdata/named_inter/pa/A` {
-      FuncFoo(foo string) (bar int, err error)
-    }
-
-  }
-  `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncA
-  `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncB
-  `testdata/named_inter/A` ..> `testdata/named_inter/D`: FuncA
-  `testdata/named_inter/B` ..> `testdata/named_inter/C`: FuncA
-  `testdata/named_inter/D` ..> `testdata/named_inter/pa/A`: FuncFoo
+    `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncA
+    `testdata/named_inter/A` ..> `testdata/named_inter/B`: FuncB
+    `testdata/named_inter/A` ..> `testdata/named_inter/D`: FuncA
+    `testdata/named_inter/B` ..> `testdata/named_inter/C`: FuncA
+    `testdata/named_inter/D` ..> `testdata/named_inter/pa/A`: FuncFoo
 
 
 ```
-
-# Installation
-
-`go install github.com/emilien-puget/go-dependency-graph@latest`
-
-# How to Use
-
-## Generator
-
-`go-dependency-graph --project=<path to project> --result=<result file> --generator=<generator>`
-
-Available generator are as follows
-
-- `c4_plantuml_component`, the default value, more information about that format
-  here : https://github.com/plantuml-stdlib/C4-PlantUML
-- `mermaid_class`, a class diagram using mermaid
-  syntax https://mermaid-js.github.io/mermaid/#/classDiagram?id=class-diagrams
-
-### With the result written to a file
-
-`go-dependency-graph --project=<path to project> --result=<result file>`
-
-### With the result piped
-
-`go-dependency-graph --project=<path to project> > <piped>`
-
