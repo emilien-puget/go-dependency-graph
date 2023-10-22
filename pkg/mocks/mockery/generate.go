@@ -54,7 +54,9 @@ func (g Generator) GenerateFromSchema(ctx context.Context, as parse.AstSchema) e
 func (g Generator) generateMockForNode(ctx context.Context, path string, node *parse.Node) error {
 	funcs := make([]*types.Func, 0, len(node.Methods))
 	for i := range node.Methods {
-		funcs = append(funcs, node.Methods[i].TypFuc)
+		if node.Methods[i].TypFuc.Exported() {
+			funcs = append(funcs, node.Methods[i].TypFuc)
+		}
 	}
 	name := strings.TrimPrefix(node.PackageName+node.StructName, path)
 	name = strings.TrimPrefix(name, "/")

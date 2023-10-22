@@ -15,5 +15,8 @@ func NewB(c *C) *B {
 func (b B) FuncA() {
 }
 
+func (b B) notExported() {
+}
+
 func (b B) FuncB() {
 }
