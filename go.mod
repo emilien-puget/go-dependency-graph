@@ -3,7 +3,7 @@ module github.com/emilien-puget/go-dependency-graph
 go 1.19
 
 require (
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/vektra/mockery/v2 v2.37.0
 	golang.org/x/mod v0.14.0
 	golang.org/x/sync v0.5.0
